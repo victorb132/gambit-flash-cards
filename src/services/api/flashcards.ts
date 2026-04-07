@@ -4,6 +4,7 @@ import { StudySession, StudyResult, StudySessionSummary } from '../../types/stud
 import {
   mockGetFlashcards,
   mockUpdateFlashcard,
+  mockCreateFlashcard,
   mockStartStudySession,
   mockAnswerCard,
   mockCompleteSession,
@@ -22,12 +23,29 @@ export async function updateFlashcard(
   deckId: string,
   flashcardId: string,
   question: string,
-  answer: string
+  answer: string,
+  questionImage?: string,
+  answerImage?: string
 ): Promise<{ flashcard: FlashCard }> {
-  if (USE_MOCK) return mockUpdateFlashcard(deckId, flashcardId, question, answer);
+  if (USE_MOCK) return mockUpdateFlashcard(deckId, flashcardId, question, answer, questionImage, answerImage);
   const response = await apiClient.put<{ flashcard: FlashCard }>(
     `/decks/${deckId}/flashcards/${flashcardId}`,
-    { question, answer }
+    { question, answer, questionImage, answerImage }
+  );
+  return response.data;
+}
+
+export async function createFlashcard(
+  deckId: string,
+  question: string,
+  answer: string,
+  questionImage?: string,
+  answerImage?: string
+): Promise<{ flashcard: FlashCard }> {
+  if (USE_MOCK) return mockCreateFlashcard(deckId, question, answer, questionImage, answerImage);
+  const response = await apiClient.post<{ flashcard: FlashCard }>(
+    `/decks/${deckId}/flashcards`,
+    { question, answer, questionImage, answerImage }
   );
   return response.data;
 }

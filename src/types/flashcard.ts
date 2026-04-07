@@ -14,6 +14,8 @@ export interface FlashCard {
   deckId: string;
   question: string;
   answer: string;
+  questionImage?: string;
+  answerImage?: string;
   order: number;
   createdAt: string;
   stats: FlashCardStats;

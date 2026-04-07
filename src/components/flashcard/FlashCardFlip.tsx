@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, TouchableOpacity, Platform } from 'react-native';
+import { Animated, TouchableOpacity, Platform, Image } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import Box from '../ui/Box';
 import Text from '../ui/Text';
@@ -64,7 +64,17 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
         }
       : { elevation: 6 };
 
-  function CardFace({ text, label, bgColor }: { text: string; label: string; bgColor: string }) {
+  function CardFace({
+    text,
+    label,
+    bgColor,
+    image,
+  }: {
+    text: string;
+    label: string;
+    bgColor: string;
+    image?: string;
+  }) {
     return (
       <Box
         flex={1}
@@ -82,6 +92,18 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
         >
           {label}
         </Text>
+        {image && (
+          <Image
+            source={{ uri: image }}
+            style={{
+              width: '100%',
+              height: 160,
+              borderRadius: 10,
+              marginBottom: 16,
+            }}
+            resizeMode="contain"
+          />
+        )}
         <Text variant="h2" textAlign="center" color="textPrimary" style={{ lineHeight: 36 }}>
           {text}
         </Text>
@@ -99,10 +121,10 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
     >
       <Box flex={1} style={{ position: 'relative' }}>
         <Animated.View style={frontStyle}>
-          <CardFace text={card.question} label="Pergunta" bgColor={theme.colors.white} />
+          <CardFace text={card.question} label="Pergunta" bgColor={theme.colors.white} image={card.questionImage} />
         </Animated.View>
         <Animated.View style={backStyle}>
-          <CardFace text={card.answer} label="Resposta" bgColor={theme.colors.surfaceLight} />
+          <CardFace text={card.answer} label="Resposta" bgColor={theme.colors.surfaceLight} image={card.answerImage} />
         </Animated.View>
       </Box>
     </TouchableOpacity>

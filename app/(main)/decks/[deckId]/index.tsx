@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, TouchableOpacity, Modal, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
+import { FlatList, TouchableOpacity, Modal, ScrollView, TextInput, useWindowDimensions, View, Image } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { ArrowLeft, CheckCircle, XCircle, Question, Minus, PencilSimple, X } from 'phosphor-react-native';
+import { ArrowLeft, CheckCircle, XCircle, Question, Minus, PencilSimple, X, Plus } from 'phosphor-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Box from '@/components/ui/Box';
 import Text from '@/components/ui/Text';
@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import ProgressBar from '@/components/ui/ProgressBar';
 import EmptyState from '@/components/common/EmptyState';
 import FlashcardListSkeleton from '@/components/common/FlashcardListSkeleton';
+import ImagePickerField from '@/components/ui/ImagePickerField';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useDeckStore } from '@/stores/deckStore';
 import { updateFlashcard } from '@/services/api/flashcards';
@@ -28,6 +29,8 @@ export default function DeckDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editQuestion, setEditQuestion] = useState('');
   const [editAnswer, setEditAnswer] = useState('');
+  const [editQuestionImage, setEditQuestionImage] = useState<string | undefined>();
+  const [editAnswerImage, setEditAnswerImage] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -40,6 +43,8 @@ export default function DeckDetailScreen() {
     if (!selectedCard) return;
     setEditQuestion(selectedCard.question);
     setEditAnswer(selectedCard.answer);
+    setEditQuestionImage(selectedCard.questionImage);
+    setEditAnswerImage(selectedCard.answerImage);
     setIsEditing(true);
   }
 
@@ -47,9 +52,9 @@ export default function DeckDetailScreen() {
     if (!selectedCard) return;
     setIsSaving(true);
     try {
-      await updateFlashcard(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim());
-      updateCardInStore(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim());
-      setSelectedCard((c) => c ? { ...c, question: editQuestion.trim(), answer: editAnswer.trim() } : c);
+      await updateFlashcard(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim(), editQuestionImage, editAnswerImage);
+      updateCardInStore(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim(), editQuestionImage, editAnswerImage);
+      setSelectedCard((c) => c ? { ...c, question: editQuestion.trim(), answer: editAnswer.trim(), questionImage: editQuestionImage, answerImage: editAnswerImage } : c);
       setIsEditing(false);
     } finally {
       setIsSaving(false);
@@ -200,6 +205,32 @@ export default function DeckDetailScreen() {
           />
         )}
 
+        {/* Add card FAB */}
+        <TouchableOpacity
+          onPress={() => router.push(`/(main)/decks/${deckId}/add-card`)}
+          accessibilityLabel="Adicionar flashcard"
+          style={{
+            position: 'absolute',
+            bottom: cards.length > 0 ? 96 : 32,
+            right: 24,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: theme.colors.surfaceLight,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1.5,
+            borderColor: theme.colors.border,
+            shadowColor: theme.colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 6,
+            elevation: 4,
+          }}
+        >
+          <Plus size={22} color={theme.colors.primaryDark} weight="bold" />
+        </TouchableOpacity>
+
         {/* Study button bottom bar */}
         {cards.length > 0 && (
           <Box
@@ -280,31 +311,47 @@ export default function DeckDetailScreen() {
                     Pergunta
                   </Text>
                   {isEditing ? (
-                    <TextInput
-                      value={editQuestion}
-                      onChangeText={setEditQuestion}
-                      multiline
-                      style={{
-                        fontFamily: 'Poppins_400Regular',
-                        fontSize: 16,
-                        color: theme.colors.textPrimary,
-                        borderWidth: 1,
-                        borderColor: theme.colors.border,
-                        borderRadius: 8,
-                        padding: 12,
-                        minHeight: 80,
-                        textAlignVertical: 'top',
-                        marginBottom: 16,
-                        backgroundColor: theme.colors.white,
-                      }}
-                    />
+                    <>
+                      <TextInput
+                        value={editQuestion}
+                        onChangeText={setEditQuestion}
+                        multiline
+                        style={{
+                          fontFamily: 'Poppins_400Regular',
+                          fontSize: 16,
+                          color: theme.colors.textPrimary,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          borderRadius: 8,
+                          padding: 12,
+                          minHeight: 80,
+                          textAlignVertical: 'top',
+                          marginBottom: 12,
+                          backgroundColor: theme.colors.white,
+                        }}
+                      />
+                      <ImagePickerField
+                        label="Imagem da pergunta"
+                        value={editQuestionImage}
+                        onChange={setEditQuestionImage}
+                      />
+                    </>
                   ) : (
-                    <Text variant="body" marginBottom="l">
-                      {selectedCard?.question}
-                    </Text>
+                    <>
+                      <Text variant="body" marginBottom={selectedCard?.questionImage ? 's' : 'l'}>
+                        {selectedCard?.question}
+                      </Text>
+                      {selectedCard?.questionImage && (
+                        <Image
+                          source={{ uri: selectedCard.questionImage }}
+                          style={{ width: '100%', height: 160, borderRadius: 10, marginBottom: 16 }}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </>
                   )}
 
-                  <Box height={1} backgroundColor="border" marginBottom="l" />
+                  <Box height={1} backgroundColor="border" marginBottom="l" marginTop={isEditing ? 'm' : undefined} />
 
                   <Text
                     variant="caption"
@@ -315,28 +362,44 @@ export default function DeckDetailScreen() {
                     Resposta
                   </Text>
                   {isEditing ? (
-                    <TextInput
-                      value={editAnswer}
-                      onChangeText={setEditAnswer}
-                      multiline
-                      style={{
-                        fontFamily: 'Poppins_400Regular',
-                        fontSize: 16,
-                        color: theme.colors.textPrimary,
-                        borderWidth: 1,
-                        borderColor: theme.colors.border,
-                        borderRadius: 8,
-                        padding: 12,
-                        minHeight: 100,
-                        textAlignVertical: 'top',
-                        marginBottom: 16,
-                        backgroundColor: theme.colors.white,
-                      }}
-                    />
+                    <>
+                      <TextInput
+                        value={editAnswer}
+                        onChangeText={setEditAnswer}
+                        multiline
+                        style={{
+                          fontFamily: 'Poppins_400Regular',
+                          fontSize: 16,
+                          color: theme.colors.textPrimary,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          borderRadius: 8,
+                          padding: 12,
+                          minHeight: 100,
+                          textAlignVertical: 'top',
+                          marginBottom: 12,
+                          backgroundColor: theme.colors.white,
+                        }}
+                      />
+                      <ImagePickerField
+                        label="Imagem da resposta"
+                        value={editAnswerImage}
+                        onChange={setEditAnswerImage}
+                      />
+                    </>
                   ) : (
-                    <Text variant="body" marginBottom="m">
-                      {selectedCard?.answer}
-                    </Text>
+                    <>
+                      <Text variant="body" marginBottom={selectedCard?.answerImage ? 's' : 'm'}>
+                        {selectedCard?.answer}
+                      </Text>
+                      {selectedCard?.answerImage && (
+                        <Image
+                          source={{ uri: selectedCard.answerImage }}
+                          style={{ width: '100%', height: 160, borderRadius: 10, marginBottom: 16 }}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </>
                   )}
                 </ScrollView>
               </View>

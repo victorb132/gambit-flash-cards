@@ -1,6 +1,6 @@
 import { USE_MOCK } from '../../utils/constants';
 import { Deck, CreateDeckRequest, CreateDeckResponse } from '../../types/deck';
-import { mockGetDecks, mockGetDeck, mockCreateDeck, mockDeleteDeck } from '../mock/handlers';
+import { mockGetDecks, mockGetDeck, mockCreateDeck, mockCreateManualDeck, mockDeleteDeck } from '../mock/handlers';
 import apiClient from './client';
 
 export async function getDecks(): Promise<{ decks: Deck[] }> {
@@ -18,6 +18,22 @@ export async function getDeck(deckId: string): Promise<{ deck: Deck }> {
 export async function createDeck(data: CreateDeckRequest): Promise<CreateDeckResponse> {
   if (USE_MOCK) return mockCreateDeck(data);
   const response = await apiClient.post<CreateDeckResponse>('/decks', data);
+  return response.data;
+}
+
+export async function createManualDeck(
+  title: string,
+  description: string | undefined,
+  emoji: string,
+  cards: { question: string; answer: string; questionImage?: string; answerImage?: string }[]
+): Promise<CreateDeckResponse> {
+  if (USE_MOCK) return mockCreateManualDeck(title, description, emoji, cards);
+  const response = await apiClient.post<CreateDeckResponse>('/decks/manual', {
+    title,
+    description,
+    coverEmoji: emoji,
+    cards,
+  });
   return response.data;
 }
 

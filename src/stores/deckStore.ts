@@ -12,9 +12,10 @@ interface DeckState {
   addDeck: (deck: Deck) => void;
   removeDeck: (deckId: string) => void;
   setFlashcards: (deckId: string, flashcards: FlashCard[]) => void;
+  addFlashcard: (deckId: string, card: FlashCard) => void;
   setLoadingDecks: (loading: boolean) => void;
   setLoadingFlashcards: (loading: boolean) => void;
-  updateFlashcard: (deckId: string, flashcardId: string, question: string, answer: string) => void;
+  updateFlashcard: (deckId: string, flashcardId: string, question: string, answer: string, questionImage?: string, answerImage?: string) => void;
   updateFlashcardStats: (
     deckId: string,
     flashcardId: string,
@@ -44,15 +45,35 @@ export const useDeckStore = create<DeckState>((set) => ({
       flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: flashcards },
     })),
 
+  addFlashcard: (deckId, card) =>
+    set((state) => {
+      const existing = state.flashcardsByDeck[deckId] ?? [];
+      const decks = state.decks.map((d) => {
+        if (d.id !== deckId) return d;
+        const newCount = d.cardCount + 1;
+        return {
+          ...d,
+          cardCount: newCount,
+          progress: d.progress
+            ? { ...d.progress, totalCards: newCount, notStarted: d.progress.notStarted + 1 }
+            : d.progress,
+        };
+      });
+      return {
+        decks,
+        flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: [...existing, card] },
+      };
+    }),
+
   setLoadingDecks: (isLoadingDecks) => set({ isLoadingDecks }),
   setLoadingFlashcards: (isLoadingFlashcards) => set({ isLoadingFlashcards }),
 
-  updateFlashcard: (deckId, flashcardId, question, answer) =>
+  updateFlashcard: (deckId, flashcardId, question, answer, questionImage, answerImage) =>
     set((state) => {
       const cards = state.flashcardsByDeck[deckId];
       if (!cards) return state;
       const updated = cards.map((c) =>
-        c.id === flashcardId ? { ...c, question, answer } : c
+        c.id === flashcardId ? { ...c, question, answer, questionImage, answerImage } : c
       );
       return { flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
     }),

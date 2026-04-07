@@ -190,6 +190,102 @@ export async function mockCreateDeck(data: CreateDeckRequest): Promise<CreateDec
   return { deck, flashcards };
 }
 
+export async function mockCreateManualDeck(
+  title: string,
+  description: string | undefined,
+  emoji: string,
+  cards: { question: string; answer: string; questionImage?: string; answerImage?: string }[]
+): Promise<CreateDeckResponse> {
+  await simulateDelay();
+
+  const decks = await getDecks();
+  const allFlashcards = await getFlashcards();
+
+  if (decks.some((d) => d.title.toLowerCase() === title.toLowerCase())) {
+    throw new MockError('Já existe um deck com esse título.', 409);
+  }
+
+  const deckId = `deck-${generateId()}`;
+
+  const flashcards: FlashCard[] = cards.map((c, i) => ({
+    id: `fc-${deckId}-${i + 1}`,
+    deckId,
+    question: c.question,
+    answer: c.answer,
+    questionImage: c.questionImage,
+    answerImage: c.answerImage,
+    order: i + 1,
+    createdAt: new Date().toISOString(),
+    stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+  }));
+
+  const deck: Deck = {
+    id: deckId,
+    title,
+    description,
+    coverEmoji: emoji,
+    cardCount: flashcards.length,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastStudiedAt: undefined,
+    progress: {
+      totalCards: flashcards.length,
+      mastered: 0,
+      learning: 0,
+      notStarted: flashcards.length,
+      completionPercentage: 0,
+    },
+  };
+
+  await saveDecks([...decks, deck]);
+  await saveFlashcards({ ...allFlashcards, [deckId]: flashcards });
+
+  return { deck, flashcards };
+}
+
+export async function mockCreateFlashcard(
+  deckId: string,
+  question: string,
+  answer: string,
+  questionImage?: string,
+  answerImage?: string
+): Promise<{ flashcard: FlashCard }> {
+  await simulateDelay(150, 300);
+
+  const allFlashcards = await getFlashcards();
+  const cards = allFlashcards[deckId] ?? [];
+
+  const newCard: FlashCard = {
+    id: `fc-${deckId}-${generateId()}`,
+    deckId,
+    question,
+    answer,
+    questionImage,
+    answerImage,
+    order: cards.length + 1,
+    createdAt: new Date().toISOString(),
+    stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+  };
+
+  allFlashcards[deckId] = [...cards, newCard];
+  await saveFlashcards(allFlashcards);
+
+  // Update deck cardCount in storage
+  const decks = await getDecks();
+  const deck = decks.find((d) => d.id === deckId);
+  if (deck) {
+    deck.cardCount += 1;
+    deck.updatedAt = new Date().toISOString();
+    if (deck.progress) {
+      deck.progress.totalCards += 1;
+      deck.progress.notStarted += 1;
+    }
+    await saveDecks(decks);
+  }
+
+  return { flashcard: newCard };
+}
+
 export async function mockDeleteDeck(deckId: string): Promise<{ message: string }> {
   await simulateDelay();
   const decks = await getDecks();
@@ -217,14 +313,16 @@ export async function mockUpdateFlashcard(
   deckId: string,
   flashcardId: string,
   question: string,
-  answer: string
+  answer: string,
+  questionImage?: string,
+  answerImage?: string
 ): Promise<{ flashcard: FlashCard }> {
   await simulateDelay(150, 300);
   const allFlashcards = await getFlashcards();
   const cards = allFlashcards[deckId] ?? [];
   const idx = cards.findIndex((c) => c.id === flashcardId);
   if (idx === -1) throw new MockError('Flashcard não encontrado.', 404);
-  cards[idx] = { ...cards[idx], question, answer };
+  cards[idx] = { ...cards[idx], question, answer, questionImage, answerImage };
   allFlashcards[deckId] = cards;
   await saveFlashcards(allFlashcards);
   return { flashcard: cards[idx] };
