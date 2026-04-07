@@ -20,7 +20,7 @@ const DeckSkeleton = React.memo(function DeckSkeleton() {
     return () => anim.stop();
   }, [opacity]);
 
-  const skeletonColor = theme.colors.primaryLight;
+  const skeletonColor = theme.colors.border;
 
   return (
     <Animated.View style={{ opacity }}>

@@ -74,7 +74,7 @@ export default function DecksScreen() {
             <Text variant="caption" color="textSecondary">
               Bem-vindo de volta!
             </Text>
-            <Text variant="h2">Olá, {firstName}! 👋</Text>
+            <Text variant="h2" color="textPrimary">Olá, {firstName}! 👋</Text>
           </Box>
           <Box flexDirection="row" alignItems="center" style={{ gap: 8 }}>
             <TouchableOpacity
@@ -94,22 +94,20 @@ export default function DecksScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginLeft: 8 }}
             >
-              <SignOut size={24} color={theme.colors.textSecondary} />
+              <SignOut size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </Box>
         </Box>
 
         {/* Search bar */}
         <Box
-          marginHorizontal="m"
-          marginBottom="m"
-          backgroundColor="surfaceLight"
-          borderRadius="m"
           flexDirection="row"
           alignItems="center"
+          backgroundColor="surfaceLight"
+          borderRadius="m"
           paddingHorizontal="m"
-          borderWidth={1}
-          borderColor="border"
+          marginHorizontal="m"
+          marginBottom="m"
         >
           <MagnifyingGlass size={18} color={theme.colors.textSecondary} />
           <TextInput
@@ -196,9 +194,9 @@ export default function DecksScreen() {
             justifyContent: 'center',
             shadowColor: theme.colors.shadow,
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.25,
+            shadowOpacity: 0.3,
             shadowRadius: 8,
-            elevation: 6,
+            elevation: 8,
           }}
         >
           <Plus size={28} color={theme.colors.white} weight="bold" />

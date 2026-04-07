@@ -3,28 +3,29 @@ import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Pl
 import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Envelope, Lock, ArrowLeft, Books, Globe, Atom, Brain, Flask } from 'phosphor-react-native';
+import { User, Envelope, Lock, ArrowLeft, Brain, Trophy, Lightbulb, Code, MusicNote } from 'phosphor-react-native';
 import Text from '@/components/ui/Text';
 import { useAuth } from '@/hooks/useAuth';
 import { Theme } from '@/theme';
 
 const FLOATING_ICONS = [
-  { Icon: Books, top: '6%',  left: '6%',   size: 34, opacity: 0.18, rotate: '-15deg' },
-  { Icon: Globe, top: '4%',  right: '10%', size: 26, opacity: 0.14, rotate: '12deg'  },
-  { Icon: Atom,  top: '16%', left: '24%',  size: 20, opacity: 0.12, rotate: '0deg'   },
-  { Icon: Brain, top: '12%', right: '26%', size: 30, opacity: 0.16, rotate: '-8deg'  },
-  { Icon: Flask, top: '24%', left: '4%',   size: 24, opacity: 0.13, rotate: '20deg'  },
+  { Icon: Brain,     top: '6%',  left: '8%',   size: 34, opacity: 0.18, rotate: '-15deg' },
+  { Icon: Trophy,    top: '4%',  right: '12%', size: 26, opacity: 0.14, rotate: '12deg'  },
+  { Icon: Lightbulb, top: '18%', left: '26%',  size: 20, opacity: 0.12, rotate: '0deg'   },
+  { Icon: Code,      top: '14%', right: '28%', size: 28, opacity: 0.15, rotate: '-8deg'  },
+  { Icon: MusicNote, top: '26%', left: '5%',   size: 22, opacity: 0.12, rotate: '18deg'  },
 ];
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const theme = useTheme<Theme>();
   const insets = useSafeAreaInsets();
-  const { isSubmitting, errors, login } = useAuth();
+  const { isSubmitting, errors, register } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  async function handleLogin() {
-    const success = await login(email, password);
+  async function handleRegister() {
+    const success = await register(name, email, password);
     if (success) router.replace('/(main)/decks');
   }
 
@@ -71,15 +72,15 @@ export default function LoginScreen() {
 
           <View style={styles.upperContent}>
             <Text style={{ fontSize: 28, fontFamily: 'Poppins_700Bold', color: theme.colors.surfaceLight }}>
-              Bem-vindo de volta
+              Criar conta
             </Text>
             <Text style={{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: theme.colors.surface, marginTop: 6, opacity: 0.85 }}>
-              Entre para continuar estudando
+              Comece a estudar gratuitamente
             </Text>
           </View>
         </View>
 
-        {/* White card sliding from bottom */}
+        {/* White card */}
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
@@ -94,6 +95,28 @@ export default function LoginScreen() {
               },
             ]}
           >
+            {/* Name */}
+            <View style={styles.fieldGroup}>
+              <Text style={labelStyle(theme)}>Nome</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.iconLeft}>
+                  <User size={18} color={theme.colors.textSecondary} />
+                </View>
+                <TextInput
+                  style={[inputStyle, { paddingLeft: 44 }]}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Seu nome completo"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  autoComplete="name"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.name && (
+                <Text style={errorTextStyle(theme)}>{errors.name}</Text>
+              )}
+            </View>
+
             {/* Email */}
             <View style={styles.fieldGroup}>
               <Text style={labelStyle(theme)}>E-mail</Text>
@@ -133,7 +156,7 @@ export default function LoginScreen() {
                   placeholderTextColor={theme.colors.textSecondary}
                   secureTextEntry
                   returnKeyType="done"
-                  onSubmitEditing={handleLogin}
+                  onSubmitEditing={handleRegister}
                 />
               </View>
               {errors.password && (
@@ -154,18 +177,14 @@ export default function LoginScreen() {
                 styles.submitButton,
                 { backgroundColor: isSubmitting ? theme.colors.primary : theme.colors.primaryDark },
               ]}
-              onPress={handleLogin}
+              onPress={handleRegister}
               disabled={isSubmitting}
               activeOpacity={0.85}
             >
               <Text style={{ fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: theme.colors.surfaceLight }}>
-                {isSubmitting ? 'Entrando...' : 'Entrar'}
+                {isSubmitting ? 'Criando conta...' : 'Criar conta'}
               </Text>
             </TouchableOpacity>
-
-            <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: theme.colors.textSecondary, textAlign: 'center', marginTop: 20, opacity: 0.7 }}>
-              Demo: usuario@gambit.com / 123456
-            </Text>
           </View>
         </ScrollView>
       </View>

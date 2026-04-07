@@ -1,7 +1,13 @@
 import { USE_MOCK } from '../../utils/constants';
-import { LoginRequest, LoginResponse, User } from '../../types/auth';
-import { mockLogin, mockGetMe, mockLogout } from '../mock/handlers';
+import { LoginRequest, RegisterRequest, LoginResponse, User } from '../../types/auth';
+import { mockLogin, mockRegister, mockGetMe, mockLogout } from '../mock/handlers';
 import apiClient from './client';
+
+export async function register(data: RegisterRequest): Promise<LoginResponse> {
+  if (USE_MOCK) return mockRegister(data);
+  const response = await apiClient.post<LoginResponse>('/auth/register', data);
+  return response.data;
+}
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
   if (USE_MOCK) return mockLogin(data);

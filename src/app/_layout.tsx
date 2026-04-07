@@ -26,7 +26,7 @@ export default function RootLayout() {
       if (isAuthenticated) {
         router.replace('/(main)/decks');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/welcome');
       }
     }
   }, [isAuthenticated, isLoading, fontsLoaded]);
@@ -37,7 +37,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }} />
         {(!fontsLoaded || isLoading) && (
           <View style={StyleSheet.absoluteFill}>
-            <LoadingState message="Carregando..." />
+            <LoadingState />
           </View>
         )}
       </AppThemeProvider>

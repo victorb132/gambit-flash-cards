@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS, MOCK_CREDENTIALS } from '../../utils/constants';
-import { LoginRequest, LoginResponse, User } from '../../types/auth';
+import { LoginRequest, RegisterRequest, LoginResponse, User } from '../../types/auth';
 import { Deck, CreateDeckRequest, CreateDeckResponse } from '../../types/deck';
 import { FlashCard } from '../../types/flashcard';
 import { StudySession, StudyCardResult, StudyResult, StudySessionSummary } from '../../types/study';
@@ -93,6 +93,22 @@ export async function mockGetMe(_token: string): Promise<User> {
     email: MOCK_CREDENTIALS.EMAIL,
     avatarUrl: undefined,
     createdAt: '2024-01-01T00:00:00.000Z',
+  };
+}
+
+export async function mockRegister(data: RegisterRequest): Promise<LoginResponse> {
+  await simulateDelay();
+  const user: User = {
+    id: `user-${generateId()}`,
+    name: data.name,
+    email: data.email.toLowerCase(),
+    avatarUrl: undefined,
+    createdAt: new Date().toISOString(),
+  };
+  return {
+    user,
+    token: `mock-jwt-token-${generateId()}`,
+    refreshToken: `mock-refresh-token-${generateId()}`,
   };
 }
 
@@ -195,6 +211,23 @@ export async function mockGetFlashcards(deckId: string): Promise<{ flashcards: F
   const allFlashcards = await getFlashcards();
   const flashcards = allFlashcards[deckId] ?? [];
   return { flashcards };
+}
+
+export async function mockUpdateFlashcard(
+  deckId: string,
+  flashcardId: string,
+  question: string,
+  answer: string
+): Promise<{ flashcard: FlashCard }> {
+  await simulateDelay(150, 300);
+  const allFlashcards = await getFlashcards();
+  const cards = allFlashcards[deckId] ?? [];
+  const idx = cards.findIndex((c) => c.id === flashcardId);
+  if (idx === -1) throw new MockError('Flashcard não encontrado.', 404);
+  cards[idx] = { ...cards[idx], question, answer };
+  allFlashcards[deckId] = cards;
+  await saveFlashcards(allFlashcards);
+  return { flashcard: cards[idx] };
 }
 
 // ─── Study handlers ───────────────────────────────────────────────────────────

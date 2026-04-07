@@ -6,6 +6,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  View,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
@@ -20,9 +21,10 @@ import { useDeckStore } from '../../stores/deckStore';
 import { FlashCard } from '../../types/flashcard';
 import { Deck } from '../../types/deck';
 import { isValidDeckTitle, isValidPrompt, isValidCardCount } from '../../utils/validators';
+import { DeckIconBox } from '../../utils/deckIcon';
 import { Theme } from '../../theme';
 
-const EMOJI_OPTIONS = ['📚', '💡', '🎯', '🌟', '🔬', '📖', '🧠', '🎨', '🏆', '🌍', '💻', '🧬', '🎭', '✨', '🦋'];
+const EMOJI_OPTIONS = ['📚', '📖', '💡', '🧠', '💻', '🧬', '🔬', '🌍', '🎨', '🏆', '🎵', '🧩', '🗣️', '❤️', '📊'];
 
 const LOADING_MESSAGES = [
   'Analisando o tema...',
@@ -128,13 +130,12 @@ export default function CreateDeckScreen() {
             flexDirection="row"
             alignItems="center"
             padding="m"
-            borderBottomWidth={1}
-            borderColor="border"
+            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           >
             <TouchableOpacity onPress={handleBack} accessibilityLabel="Voltar">
               <ArrowLeft size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
-            <Text variant="h3" marginLeft="m">
+            <Text variant="h3" color="textPrimary" marginLeft="m">
               Criar Novo Deck
             </Text>
           </Box>
@@ -144,30 +145,32 @@ export default function CreateDeckScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Input
-              label="Título do Deck *"
-              value={title}
-              onChangeText={(t) => setTitle(t.slice(0, 60))}
-              placeholder="Ex: Gramática Inglesa"
-              error={errors.title}
-              maxLength={60}
-            />
+            {/* Basic info */}
+            <Box backgroundColor="surfaceLight" borderRadius="l" padding="m" marginBottom="m">
+              <Input
+                label="Título do Deck *"
+                value={title}
+                onChangeText={(t) => setTitle(t.slice(0, 60))}
+                placeholder="Ex: Gramática Inglesa"
+                error={errors.title}
+                maxLength={60}
+              />
+              <Input
+                label="Descrição (opcional)"
+                value={description}
+                onChangeText={(t) => setDescription(t.slice(0, 200))}
+                placeholder="Breve descrição do conteúdo"
+                maxLength={200}
+              />
+            </Box>
 
-            <Input
-              label="Descrição (opcional)"
-              value={description}
-              onChangeText={(t) => setDescription(t.slice(0, 200))}
-              placeholder="Breve descrição do conteúdo"
-              maxLength={200}
-            />
-
-            {/* Emoji selector */}
-            <Box marginBottom="m">
+            {/* Icon selector */}
+            <Box backgroundColor="surfaceLight" borderRadius="l" padding="m" marginBottom="m">
               <Text variant="label" marginBottom="s">
                 Ícone do Deck
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Box flexDirection="row" style={{ gap: 8 }}>
+                <Box flexDirection="row" style={{ gap: 10 }}>
                   {EMOJI_OPTIONS.map((e) => (
                     <TouchableOpacity
                       key={e}
@@ -175,16 +178,21 @@ export default function CreateDeckScreen() {
                       accessibilityLabel={`Ícone ${e}`}
                     >
                       <Box
-                        width={48}
-                        height={48}
-                        borderRadius="m"
-                        borderWidth={2}
-                        borderColor={emoji === e ? 'primaryDark' : 'border'}
-                        backgroundColor={emoji === e ? 'primaryLight' : 'surfaceLight'}
-                        alignItems="center"
-                        justifyContent="center"
+                        style={{
+                          padding: 3,
+                          borderRadius: 14,
+                          borderWidth: 2.5,
+                          borderColor: emoji === e ? theme.colors.primaryDark : 'transparent',
+                        }}
                       >
-                        <Text style={{ fontSize: 24 }}>{e}</Text>
+                        <DeckIconBox
+                          emoji={e}
+                          deckId={e}
+                          size={22}
+                          boxSize={44}
+                          borderRadius={10}
+                          colors={theme.colors}
+                        />
                       </Box>
                     </TouchableOpacity>
                   ))}
@@ -193,16 +201,18 @@ export default function CreateDeckScreen() {
             </Box>
 
             {/* Prompt */}
-            <Box marginBottom="m">
+            <Box backgroundColor="surfaceLight" borderRadius="l" padding="m" marginBottom="m">
               <Text variant="label" marginBottom="s">
                 Sobre o que você quer estudar? *
               </Text>
-              <Box
-                backgroundColor="surfaceLight"
-                borderRadius="m"
-                borderWidth={1}
-                borderColor={errors.prompt ? 'error' : 'border'}
-                padding="m"
+              <View
+                style={{
+                  backgroundColor: theme.colors.white,
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: errors.prompt ? theme.colors.error : theme.colors.border,
+                  padding: 12,
+                }}
               >
                 <TextInput
                   value={prompt}
@@ -220,7 +230,7 @@ export default function CreateDeckScreen() {
                   }}
                   accessibilityLabel="Tema para gerar flashcards"
                 />
-              </Box>
+              </View>
               {errors.prompt && (
                 <Text variant="caption" color="error" marginTop="xs">
                   {errors.prompt}
@@ -232,7 +242,7 @@ export default function CreateDeckScreen() {
             </Box>
 
             {/* Card count */}
-            <Box marginBottom="l">
+            <Box backgroundColor="surfaceLight" borderRadius="l" padding="m" marginBottom="l">
               <Text variant="label" marginBottom="s">
                 Quantidade de Flashcards: {cardCount}
               </Text>
@@ -241,51 +251,41 @@ export default function CreateDeckScreen() {
                   onPress={() => setCardCount((v) => Math.max(5, v - 1))}
                   accessibilityLabel="Diminuir quantidade"
                 >
-                  <Box
-                    width={40}
-                    height={40}
-                    borderRadius="m"
-                    backgroundColor="surfaceLight"
-                    borderWidth={1}
-                    borderColor="border"
-                    alignItems="center"
-                    justifyContent="center"
+                  <View
+                    style={{
+                      width: 40, height: 40, borderRadius: 12,
+                      backgroundColor: theme.colors.white,
+                      borderWidth: 1, borderColor: theme.colors.border,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}
                   >
                     <Minus size={20} color={theme.colors.textPrimary} />
-                  </Box>
+                  </View>
                 </TouchableOpacity>
-                <Box
-                  flex={1}
-                  backgroundColor="surfaceLight"
-                  borderRadius="m"
-                  padding="m"
-                  alignItems="center"
-                  borderWidth={1}
-                  borderColor="border"
+                <View
+                  style={{
+                    flex: 1, backgroundColor: theme.colors.white,
+                    borderRadius: 12, padding: 12, alignItems: 'center',
+                    borderWidth: 1, borderColor: theme.colors.border,
+                  }}
                 >
-                  <Text variant="h3" color="primaryDark">
-                    {cardCount}
-                  </Text>
-                  <Text variant="caption" color="textSecondary">
-                    cards
-                  </Text>
-                </Box>
+                  <Text variant="h3" color="primaryDark">{cardCount}</Text>
+                  <Text variant="caption" color="textSecondary">cards</Text>
+                </View>
                 <TouchableOpacity
                   onPress={() => setCardCount((v) => Math.min(30, v + 1))}
                   accessibilityLabel="Aumentar quantidade"
                 >
-                  <Box
-                    width={40}
-                    height={40}
-                    borderRadius="m"
-                    backgroundColor="surfaceLight"
-                    borderWidth={1}
-                    borderColor="border"
-                    alignItems="center"
-                    justifyContent="center"
+                  <View
+                    style={{
+                      width: 40, height: 40, borderRadius: 12,
+                      backgroundColor: theme.colors.white,
+                      borderWidth: 1, borderColor: theme.colors.border,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}
                   >
                     <Plus size={20} color={theme.colors.textPrimary} />
-                  </Box>
+                  </View>
                 </TouchableOpacity>
               </Box>
               <Text variant="caption" color="textSecondary" marginTop="xs">
@@ -304,13 +304,21 @@ export default function CreateDeckScreen() {
             {/* Preview */}
             {previewDeck && previewCards.length > 0 && !isGenerating && (
               <Box marginTop="xl">
-                <Box flexDirection="row" alignItems="center" marginBottom="m">
-                  <Text style={{ fontSize: 32 }}>{previewDeck.coverEmoji}</Text>
-                  <Box marginLeft="m">
-                    <Text variant="h3">{previewDeck.title}</Text>
-                    <Text variant="caption" color="textSecondary">
-                      {previewCards.length} flashcards gerados
-                    </Text>
+                <Box backgroundColor="white" borderRadius="l" padding="m" marginBottom="m" style={{ elevation: 2 }}>
+                  <Box flexDirection="row" alignItems="center">
+                    <DeckIconBox
+                      emoji={previewDeck.coverEmoji}
+                      deckId={previewDeck.id}
+                      size={24}
+                      boxSize={52}
+                      colors={theme.colors}
+                    />
+                    <Box marginLeft="m">
+                      <Text variant="h3" color="textPrimary">{previewDeck.title}</Text>
+                      <Text variant="caption" color="textSecondary">
+                        {previewCards.length} flashcards gerados
+                      </Text>
+                    </Box>
                   </Box>
                 </Box>
 
@@ -318,16 +326,15 @@ export default function CreateDeckScreen() {
                   <Box
                     key={card.id}
                     backgroundColor="white"
-                    borderRadius="l"
+                    borderRadius="m"
                     padding="m"
                     marginBottom="s"
-                    borderLeftWidth={4}
-                    borderColor="primary"
+                    style={{ borderLeftWidth: 4, borderLeftColor: theme.colors.primaryDark }}
                   >
-                    <Text variant="caption" color="primary" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    <Text variant="caption" color="primaryDark" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       Card #{idx + 1}
                     </Text>
-                    <Text variant="bodySmall" marginTop="xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    <Text variant="bodySmall" color="textPrimary" marginTop="xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       {card.question}
                     </Text>
                     <Text variant="caption" color="textSecondary" marginTop="xs">

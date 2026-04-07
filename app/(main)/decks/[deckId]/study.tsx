@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, TouchableOpacity, Animated } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { X, CheckCircle, XCircle, Question, Microphone, MicrophoneSlash } from 'phosphor-react-native';
+import { X, CheckCircle, XCircle, Question, Microphone, MicrophoneSlash, SpeakerHigh, SpeakerSlash } from 'phosphor-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View } from 'react-native';
 import Box from '@/components/ui/Box';
@@ -17,6 +17,7 @@ import { getFlashcards as fetchFlashcardsApi } from '@/services/api/flashcards';
 import { StudyResult } from '@/types/study';
 import { Theme } from '@/theme';
 import { formatDuration } from '@/utils/formatters';
+import StudySkeleton from '@/components/common/StudySkeleton';
 
 export default function StudyScreen() {
   const theme = useTheme<Theme>();
@@ -32,25 +33,24 @@ export default function StudyScreen() {
     summary,
     isFinished,
     isVoiceEnabled,
+    isSpeechEnabled,
     startSession,
     flip,
+    unflip,
     answer,
     resetStudy,
     toggleVoice,
+    toggleSpeech,
   } = useStudySession();
 
   const { speak, stop } = useTextToSpeech();
   const [feedbackColor, setFeedbackColor] = useState<string | null>(null);
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
 
-  // Controls whether the session has been fully initialized (cards loaded + session created)
   const [sessionReady, setSessionReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
-
-  // A counter used to trigger re-initialization (e.g., "Estudar Novamente")
   const [sessionKey, setSessionKey] = useState(0);
 
-  // ─── Single initialization effect ─────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -60,7 +60,6 @@ export default function StudyScreen() {
       resetStudy();
 
       try {
-        // Get cards from deckStore; fetch from API if not yet cached
         let flashcards = useDeckStore.getState().flashcardsByDeck[deckId] ?? [];
         if (flashcards.length === 0) {
           const response = await fetchFlashcardsApi(deckId);
@@ -90,31 +89,31 @@ export default function StudyScreen() {
     return () => {
       cancelled = true;
     };
-    // sessionKey allows re-triggering this effect for "Estudar Novamente"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId, sessionKey]);
 
-  // ─── Auto-read question when card changes ──────────────────────────────────
   useEffect(() => {
     if (sessionReady && currentCard && !isFlipped) {
       stop();
-      const t = setTimeout(() => speak(currentCard.question), 400);
-      return () => clearTimeout(t);
+      if (isSpeechEnabled) {
+        const t = setTimeout(() => speak(currentCard.question), 400);
+        return () => clearTimeout(t);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, sessionReady]);
+  }, [currentIndex, sessionReady, isSpeechEnabled]);
 
-  // ─── Auto-read answer when flipped ────────────────────────────────────────
   useEffect(() => {
     if (isFlipped && currentCard) {
       stop();
-      const t = setTimeout(() => speak(currentCard.answer), 300);
-      return () => clearTimeout(t);
+      if (isSpeechEnabled) {
+        const t = setTimeout(() => speak(currentCard.answer), 300);
+        return () => clearTimeout(t);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlipped]);
+  }, [isFlipped, isSpeechEnabled]);
 
-  // ─── Voice command handler ─────────────────────────────────────────────────
   const handleVoiceCommand = useCallback(
     (command: 'flip' | 'correct' | 'wrong' | 'doubt' | null) => {
       if (!command) return;
@@ -132,7 +131,6 @@ export default function StudyScreen() {
 
   const { isListening } = useVoiceRecognition(handleVoiceCommand, isVoiceEnabled && sessionReady);
 
-  // ─── Answer logic ──────────────────────────────────────────────────────────
   function flashFeedback(color: string) {
     setFeedbackColor(color);
     Animated.sequence([
@@ -175,8 +173,23 @@ export default function StudyScreen() {
 
   function handleStudyAgain() {
     stop();
-    // Incrementing sessionKey re-triggers the initialization effect
     setSessionKey((k) => k + 1);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        stop();
+      };
+    }, [stop])
+  );
+
+  function handleShowQuestion() {
+    stop();
+    unflip();
+    if (currentCard && isSpeechEnabled) {
+      setTimeout(() => speak(currentCard.question), 300);
+    }
   }
 
   // ─── Summary screen ────────────────────────────────────────────────────────
@@ -193,95 +206,87 @@ export default function StudyScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }}>
         <Box flex={1} backgroundColor="surface" padding="l">
-          <View>
-            <Text variant="h1" textAlign="center" marginBottom="s">
-              Sessão Concluída!
-            </Text>
-            <Text variant="body" textAlign="center" color="textSecondary" marginBottom="xl">
-              {message}
-            </Text>
+          <Text variant="h1" textAlign="center" color="textPrimary" marginBottom="s">
+            Sessão Concluída!
+          </Text>
+          <Text variant="body" textAlign="center" color="textSecondary" marginBottom="xl">
+            {message}
+          </Text>
 
+          <Box backgroundColor="white" borderRadius="xl" padding="l" marginBottom="l" style={{ elevation: 3 }}>
+            <Text variant="h2" textAlign="center" color="textPrimary" marginBottom="m">
+              {summary.totalCards} cards
+            </Text>
+            <Box flexDirection="row" justifyContent="space-around" marginBottom="m">
+              <Box alignItems="center">
+                <Text variant="h2" color="success">{summary.correct}</Text>
+                <Text variant="caption" color="success">Acertei</Text>
+              </Box>
+              <Box alignItems="center">
+                <Text variant="h2" color="error">{summary.wrong}</Text>
+                <Text variant="caption" color="error">Errei</Text>
+              </Box>
+              <Box alignItems="center">
+                <Text variant="h2" color="warning">{summary.doubt}</Text>
+                <Text variant="caption" color="warning">Dúvida</Text>
+              </Box>
+            </Box>
             <Box
-              backgroundColor="white"
-              borderRadius="xl"
-              padding="l"
-              marginBottom="l"
-              style={{ elevation: 3 }}
+              height={12}
+              borderRadius="round"
+              backgroundColor="border"
+              overflow="hidden"
+              flexDirection="row"
             >
-              <Text variant="h2" textAlign="center" marginBottom="m">
-                {summary.totalCards} cards
-              </Text>
-              <Box flexDirection="row" justifyContent="space-around" marginBottom="m">
-                <Box alignItems="center">
-                  <Text variant="h2" color="success">{summary.correct}</Text>
-                  <Text variant="caption" color="success">Acertei</Text>
-                </Box>
-                <Box alignItems="center">
-                  <Text variant="h2" color="error">{summary.wrong}</Text>
-                  <Text variant="caption" color="error">Errei</Text>
-                </Box>
-                <Box alignItems="center">
-                  <Text variant="h2" color="warning">{summary.doubt}</Text>
-                  <Text variant="caption" color="warning">Dúvida</Text>
-                </Box>
-              </Box>
-              <Box
-                height={12}
-                borderRadius="round"
-                backgroundColor="border"
-                overflow="hidden"
-                flexDirection="row"
-              >
-                {summary.correct > 0 && (
-                  <Box
-                    backgroundColor="success"
-                    style={{ width: `${(summary.correct / summary.totalCards) * 100}%` }}
-                  />
-                )}
-                {summary.doubt > 0 && (
-                  <Box
-                    backgroundColor="warning"
-                    style={{ width: `${(summary.doubt / summary.totalCards) * 100}%` }}
-                  />
-                )}
-                {summary.wrong > 0 && (
-                  <Box
-                    backgroundColor="error"
-                    style={{ width: `${(summary.wrong / summary.totalCards) * 100}%` }}
-                  />
-                )}
-              </Box>
-              <Box flexDirection="row" justifyContent="space-between" marginTop="m">
-                <Text variant="caption" color="textSecondary">
-                  Tempo total: {formatDuration(summary.totalTimeMs)}
-                </Text>
-                <Text variant="caption" color="textSecondary">
-                  Média: {formatDuration(summary.averageTimePerCardMs)}/card
-                </Text>
-              </Box>
-            </Box>
-
-            <Box style={{ gap: 12 }}>
-              <TouchableOpacity onPress={handleStudyAgain} accessibilityLabel="Estudar novamente">
-                <Box backgroundColor="primaryDark" borderRadius="m" padding="m" alignItems="center">
-                  <Text variant="button">Estudar Novamente</Text>
-                </Box>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Voltar para o deck">
+              {summary.correct > 0 && (
                 <Box
-                  borderRadius="m"
-                  padding="m"
-                  alignItems="center"
-                  borderWidth={2}
-                  borderColor="primaryDark"
-                >
-                  <Text variant="button" color="primaryDark">
-                    Voltar para o Deck
-                  </Text>
-                </Box>
-              </TouchableOpacity>
+                  backgroundColor="success"
+                  style={{ width: `${(summary.correct / summary.totalCards) * 100}%` }}
+                />
+              )}
+              {summary.doubt > 0 && (
+                <Box
+                  backgroundColor="warning"
+                  style={{ width: `${(summary.doubt / summary.totalCards) * 100}%` }}
+                />
+              )}
+              {summary.wrong > 0 && (
+                <Box
+                  backgroundColor="error"
+                  style={{ width: `${(summary.wrong / summary.totalCards) * 100}%` }}
+                />
+              )}
             </Box>
-          </View>
+            <Box flexDirection="row" justifyContent="space-between" marginTop="m">
+              <Text variant="caption" color="textSecondary">
+                Tempo total: {formatDuration(summary.totalTimeMs)}
+              </Text>
+              <Text variant="caption" color="textSecondary">
+                Média: {formatDuration(summary.averageTimePerCardMs)}/card
+              </Text>
+            </Box>
+          </Box>
+
+          <Box style={{ gap: 12 }}>
+            <TouchableOpacity onPress={handleStudyAgain} accessibilityLabel="Estudar novamente">
+              <Box backgroundColor="primaryDark" borderRadius="m" padding="m" alignItems="center">
+                <Text variant="button" color="white">Estudar Novamente</Text>
+              </Box>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Voltar para o deck">
+              <Box
+                borderRadius="m"
+                padding="m"
+                alignItems="center"
+                borderWidth={2}
+                borderColor="border"
+              >
+                <Text variant="button" color="textSecondary">
+                  Voltar para o Deck
+                </Text>
+              </Box>
+            </TouchableOpacity>
+          </Box>
         </Box>
       </SafeAreaView>
     );
@@ -293,7 +298,7 @@ export default function StudyScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }}>
         <Box flex={1} alignItems="center" justifyContent="center" padding="xl">
           <Text style={{ fontSize: 48 }}>😕</Text>
-          <Text variant="h3" textAlign="center" marginTop="m">
+          <Text variant="h3" color="textPrimary" textAlign="center" marginTop="m">
             {initError}
           </Text>
           <Box marginTop="l" width={200}>
@@ -302,7 +307,7 @@ export default function StudyScreen() {
               accessibilityLabel="Tentar novamente"
             >
               <Box backgroundColor="primaryDark" borderRadius="m" padding="m" alignItems="center">
-                <Text variant="button">Tentar Novamente</Text>
+                <Text variant="button" color="white">Tentar Novamente</Text>
               </Box>
             </TouchableOpacity>
           </Box>
@@ -313,15 +318,7 @@ export default function StudyScreen() {
 
   // ─── Loading state ─────────────────────────────────────────────────────────
   if (!sessionReady || !currentCard) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-        <Box flex={1} alignItems="center" justifyContent="center">
-          <Text variant="bodySmall" color="textSecondary">
-            Preparando sessão...
-          </Text>
-        </Box>
-      </SafeAreaView>
-    );
+    return <StudySkeleton />;
   }
 
   const total = cards.length;
@@ -355,7 +352,7 @@ export default function StudyScreen() {
           <Box alignItems="center">
             <Text
               variant="bodySmall"
-              color="textSecondary"
+              color="textPrimary"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
             >
               {currentIndex + 1} / {total}
@@ -364,16 +361,30 @@ export default function StudyScreen() {
               {deck?.title}
             </Text>
           </Box>
-          <TouchableOpacity
-            onPress={toggleVoice}
-            accessibilityLabel={isVoiceEnabled ? 'Desativar voz' : 'Ativar voz'}
-          >
-            {isVoiceEnabled ? (
-              <Microphone size={24} color={theme.colors.primary} weight="fill" />
-            ) : (
-              <MicrophoneSlash size={24} color={theme.colors.textSecondary} />
-            )}
-          </TouchableOpacity>
+          <Box flexDirection="row" alignItems="center" style={{ gap: 16 }}>
+            <TouchableOpacity
+              onPress={() => { if (isSpeechEnabled) stop(); toggleSpeech(); }}
+              accessibilityLabel={isSpeechEnabled ? 'Mutar áudio' : 'Ativar áudio'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              {isSpeechEnabled ? (
+                <SpeakerHigh size={22} color={theme.colors.primaryDark} weight="fill" />
+              ) : (
+                <SpeakerSlash size={22} color={theme.colors.textSecondary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={toggleVoice}
+              accessibilityLabel={isVoiceEnabled ? 'Desativar microfone' : 'Ativar microfone'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              {isVoiceEnabled ? (
+                <Microphone size={22} color={theme.colors.primaryDark} weight="fill" />
+              ) : (
+                <MicrophoneSlash size={22} color={theme.colors.textSecondary} />
+              )}
+            </TouchableOpacity>
+          </Box>
         </Box>
 
         {/* Progress bar */}
@@ -402,8 +413,7 @@ export default function StudyScreen() {
           <FlashCardFlip
             card={currentCard}
             isFlipped={isFlipped}
-            onFlip={flip}
-            onSpeak={speak}
+            onFlip={isFlipped ? handleShowQuestion : flip}
           />
         </Box>
 

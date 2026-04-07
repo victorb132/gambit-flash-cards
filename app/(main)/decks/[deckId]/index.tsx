@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { FlatList, TouchableOpacity, Modal, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { ArrowLeft, CheckCircle, XCircle, Question, Minus } from 'phosphor-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, CheckCircle, XCircle, Question, Minus, PencilSimple, X } from 'phosphor-react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Box from '@/components/ui/Box';
 import Text from '@/components/ui/Text';
 import Button from '@/components/ui/Button';
 import ProgressBar from '@/components/ui/ProgressBar';
 import EmptyState from '@/components/common/EmptyState';
-import LoadingState from '@/components/common/LoadingState';
+import FlashcardListSkeleton from '@/components/common/FlashcardListSkeleton';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useDeckStore } from '@/stores/deckStore';
+import { updateFlashcard } from '@/services/api/flashcards';
+import { DeckIconBox } from '@/utils/deckIcon';
 import { FlashCard } from '@/types/flashcard';
 import { Theme } from '@/theme';
 import { truncate } from '@/utils/formatters';
@@ -21,7 +23,38 @@ export default function DeckDetailScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const { cards, isLoadingFlashcards, fetchFlashcards } = useFlashcards(deckId);
   const deck = useDeckStore((s) => s.decks.find((d) => d.id === deckId));
+  const { updateFlashcard: updateCardInStore } = useDeckStore();
   const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editQuestion, setEditQuestion] = useState('');
+  const [editAnswer, setEditAnswer] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (!selectedCard) setIsEditing(false);
+  }, [selectedCard]);
+
+  function handleStartEdit() {
+    if (!selectedCard) return;
+    setEditQuestion(selectedCard.question);
+    setEditAnswer(selectedCard.answer);
+    setIsEditing(true);
+  }
+
+  async function handleSave() {
+    if (!selectedCard) return;
+    setIsSaving(true);
+    try {
+      await updateFlashcard(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim());
+      updateCardInStore(deckId, selectedCard.id, editQuestion.trim(), editAnswer.trim());
+      setSelectedCard((c) => c ? { ...c, question: editQuestion.trim(), answer: editAnswer.trim() } : c);
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   useEffect(() => {
     fetchFlashcards();
@@ -36,7 +69,7 @@ export default function DeckDetailScreen() {
   }
 
   if (isLoadingFlashcards) {
-    return <LoadingState message="Carregando flashcards..." />;
+    return <FlashcardListSkeleton />;
   }
 
   const progress = deck?.progress;
@@ -49,8 +82,7 @@ export default function DeckDetailScreen() {
           flexDirection="row"
           alignItems="center"
           padding="m"
-          borderBottomWidth={1}
-          borderColor="border"
+          style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
         >
           <TouchableOpacity
             onPress={() => router.back()}
@@ -59,9 +91,21 @@ export default function DeckDetailScreen() {
           >
             <ArrowLeft size={24} color={theme.colors.textPrimary} />
           </TouchableOpacity>
+          {deck && (
+            <Box marginLeft="s">
+              <DeckIconBox
+                emoji={deck.coverEmoji}
+                deckId={deck.id}
+                size={20}
+                boxSize={40}
+                borderRadius={8}
+                colors={theme.colors}
+              />
+            </Box>
+          )}
           <Box marginLeft="m" flex={1}>
-            <Text variant="h3" numberOfLines={1}>
-              {deck?.coverEmoji} {deck?.title ?? 'Deck'}
+            <Text variant="h3" color="textPrimary" numberOfLines={1}>
+              {deck?.title ?? 'Deck'}
             </Text>
           </Box>
         </Box>
@@ -73,13 +117,7 @@ export default function DeckDetailScreen() {
             margin="m"
             borderRadius="l"
             padding="m"
-            style={{
-              shadowColor: theme.colors.shadow,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
+            style={{ elevation: 3 }}
           >
             <Box flexDirection="row" justifyContent="space-between" marginBottom="m">
               <Text variant="bodySmall" color="textSecondary">
@@ -107,7 +145,7 @@ export default function DeckDetailScreen() {
                 <Text variant="caption" color="textSecondary">Aprendendo</Text>
               </Box>
               <Box alignItems="center">
-                <Text variant="h3" color="textSecondary">{progress.notStarted}</Text>
+                <Text variant="h3" color="textPrimary">{progress.notStarted}</Text>
                 <Text variant="caption" color="textSecondary">Novo</Text>
               </Box>
             </Box>
@@ -134,12 +172,12 @@ export default function DeckDetailScreen() {
               <TouchableOpacity
                 onPress={() => setSelectedCard(item)}
                 accessibilityLabel={`Card ${item.order}: ${item.question}`}
+                style={{ marginBottom: 8 }}
               >
                 <Box
                   backgroundColor="white"
                   borderRadius="m"
                   padding="m"
-                  marginBottom="s"
                   flexDirection="row"
                   alignItems="center"
                   borderWidth={1}
@@ -152,7 +190,7 @@ export default function DeckDetailScreen() {
                   >
                     #{item.order}
                   </Text>
-                  <Text variant="bodySmall" flex={1} numberOfLines={2}>
+                  <Text variant="bodySmall" color="textPrimary" flex={1} numberOfLines={2}>
                     {truncate(item.question, 80)}
                   </Text>
                   <Box marginLeft="s">{getResultIcon(item)}</Box>
@@ -162,17 +200,20 @@ export default function DeckDetailScreen() {
           />
         )}
 
-        {/* Study button */}
+        {/* Study button bottom bar */}
         {cards.length > 0 && (
           <Box
-            position="absolute"
-            bottom={0}
-            left={0}
-            right={0}
-            padding="m"
             backgroundColor="surface"
-            borderTopWidth={1}
-            borderColor="border"
+            padding="m"
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
+              paddingBottom: insets.bottom + 16,
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+            }}
           >
             <Button
               label="Estudar Deck"
@@ -194,46 +235,111 @@ export default function DeckDetailScreen() {
             activeOpacity={1}
             onPress={() => setSelectedCard(null)}
           >
-            <TouchableOpacity activeOpacity={1}>
-              <Box
-                backgroundColor="white"
-                borderTopLeftRadius="xl"
-                borderTopRightRadius="xl"
-                padding="l"
-                style={{ maxHeight: '80%' }}
+            <TouchableOpacity activeOpacity={1} style={{ width: '100%' }}>
+              <View
+                style={{
+                  backgroundColor: 'white',
+                  borderTopLeftRadius: 28,
+                  borderTopRightRadius: 28,
+                  paddingHorizontal: 24,
+                  paddingTop: 20,
+                  maxHeight: height * 0.75,
+                  paddingBottom: insets.bottom + 16,
+                }}
               >
-                <Box
-                  width={40}
-                  height={4}
-                  borderRadius="round"
-                  backgroundColor="border"
-                  alignSelf="center"
-                  marginBottom="l"
-                />
-                <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Sheet handle */}
+                <Box flexDirection="row" alignItems="center" justifyContent="space-between" marginBottom="l">
+                  {isEditing ? (
+                    <TouchableOpacity onPress={() => setIsEditing(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <X size={20} color={theme.colors.textSecondary} />
+                    </TouchableOpacity>
+                  ) : (
+                    <Box width={20} />
+                  )}
+                  <Box width={40} height={4} borderRadius="round" backgroundColor="border" />
+                  {isEditing ? (
+                    <TouchableOpacity onPress={handleSave} disabled={isSaving} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text variant="caption" color="primary" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {isSaving ? 'Salvando...' : 'Salvar'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={handleStartEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <PencilSimple size={20} color={theme.colors.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                </Box>
+
+                <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                   <Text
                     variant="caption"
-                    color="primaryDark"
+                    color="textSecondary"
                     style={{ textTransform: 'uppercase', letterSpacing: 1 }}
+                    marginBottom="s"
                   >
                     Pergunta
                   </Text>
-                  <Text variant="body" marginTop="s" marginBottom="l">
-                    {selectedCard?.question}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      value={editQuestion}
+                      onChangeText={setEditQuestion}
+                      multiline
+                      style={{
+                        fontFamily: 'Poppins_400Regular',
+                        fontSize: 16,
+                        color: theme.colors.textPrimary,
+                        borderWidth: 1,
+                        borderColor: theme.colors.border,
+                        borderRadius: 8,
+                        padding: 12,
+                        minHeight: 80,
+                        textAlignVertical: 'top',
+                        marginBottom: 16,
+                        backgroundColor: theme.colors.white,
+                      }}
+                    />
+                  ) : (
+                    <Text variant="body" marginBottom="l">
+                      {selectedCard?.question}
+                    </Text>
+                  )}
+
                   <Box height={1} backgroundColor="border" marginBottom="l" />
+
                   <Text
                     variant="caption"
                     color="success"
                     style={{ textTransform: 'uppercase', letterSpacing: 1 }}
+                    marginBottom="s"
                   >
                     Resposta
                   </Text>
-                  <Text variant="body" marginTop="s" marginBottom="xl">
-                    {selectedCard?.answer}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      value={editAnswer}
+                      onChangeText={setEditAnswer}
+                      multiline
+                      style={{
+                        fontFamily: 'Poppins_400Regular',
+                        fontSize: 16,
+                        color: theme.colors.textPrimary,
+                        borderWidth: 1,
+                        borderColor: theme.colors.border,
+                        borderRadius: 8,
+                        padding: 12,
+                        minHeight: 100,
+                        textAlignVertical: 'top',
+                        marginBottom: 16,
+                        backgroundColor: theme.colors.white,
+                      }}
+                    />
+                  ) : (
+                    <Text variant="body" marginBottom="m">
+                      {selectedCard?.answer}
+                    </Text>
+                  )}
                 </ScrollView>
-              </Box>
+              </View>
             </TouchableOpacity>
           </TouchableOpacity>
         </Modal>

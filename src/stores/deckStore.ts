@@ -14,6 +14,7 @@ interface DeckState {
   setFlashcards: (deckId: string, flashcards: FlashCard[]) => void;
   setLoadingDecks: (loading: boolean) => void;
   setLoadingFlashcards: (loading: boolean) => void;
+  updateFlashcard: (deckId: string, flashcardId: string, question: string, answer: string) => void;
   updateFlashcardStats: (
     deckId: string,
     flashcardId: string,
@@ -45,6 +46,16 @@ export const useDeckStore = create<DeckState>((set) => ({
 
   setLoadingDecks: (isLoadingDecks) => set({ isLoadingDecks }),
   setLoadingFlashcards: (isLoadingFlashcards) => set({ isLoadingFlashcards }),
+
+  updateFlashcard: (deckId, flashcardId, question, answer) =>
+    set((state) => {
+      const cards = state.flashcardsByDeck[deckId];
+      if (!cards) return state;
+      const updated = cards.map((c) =>
+        c.id === flashcardId ? { ...c, question, answer } : c
+      );
+      return { flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
+    }),
 
   updateFlashcardStats: (deckId, flashcardId, result) =>
     set((state) => {

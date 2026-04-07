@@ -13,6 +13,7 @@ export function useStudySession() {
     isFlipped,
     summary,
     isVoiceEnabled,
+    isSpeechEnabled,
     setSession,
     setCards,
     setFlipped,
@@ -20,6 +21,7 @@ export function useStudySession() {
     setSummary,
     resetStudy,
     toggleVoice,
+    toggleSpeech,
     getElapsedMs,
   } = useStudyStore();
 
@@ -40,6 +42,10 @@ export function useStudySession() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [isFlipped, setFlipped]);
+
+  const unflip = useCallback(() => {
+    setFlipped(false);
+  }, [setFlipped]);
 
   const answer = useCallback(
     async (result: StudyResult) => {
@@ -107,10 +113,13 @@ export function useStudySession() {
     summary,
     isFinished,
     isVoiceEnabled,
+    isSpeechEnabled,
     startSession,
     flip,
+    unflip,
     answer,
     resetStudy,
     toggleVoice,
+    toggleSpeech,
   };
 }

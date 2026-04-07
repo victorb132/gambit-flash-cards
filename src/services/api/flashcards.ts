@@ -3,6 +3,7 @@ import { FlashCard } from '../../types/flashcard';
 import { StudySession, StudyResult, StudySessionSummary } from '../../types/study';
 import {
   mockGetFlashcards,
+  mockUpdateFlashcard,
   mockStartStudySession,
   mockAnswerCard,
   mockCompleteSession,
@@ -13,6 +14,20 @@ export async function getFlashcards(deckId: string): Promise<{ flashcards: Flash
   if (USE_MOCK) return mockGetFlashcards(deckId);
   const response = await apiClient.get<{ flashcards: FlashCard[] }>(
     `/decks/${deckId}/flashcards`
+  );
+  return response.data;
+}
+
+export async function updateFlashcard(
+  deckId: string,
+  flashcardId: string,
+  question: string,
+  answer: string
+): Promise<{ flashcard: FlashCard }> {
+  if (USE_MOCK) return mockUpdateFlashcard(deckId, flashcardId, question, answer);
+  const response = await apiClient.put<{ flashcard: FlashCard }>(
+    `/decks/${deckId}/flashcards/${flashcardId}`,
+    { question, answer }
   );
   return response.data;
 }

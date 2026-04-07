@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TouchableOpacity, Platform } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { SpeakerHigh } from 'phosphor-react-native';
 import Box from '../ui/Box';
 import Text from '../ui/Text';
 import { FlashCard } from '../../types/flashcard';
@@ -11,14 +10,12 @@ interface FlashCardFlipProps {
   card: FlashCard;
   isFlipped: boolean;
   onFlip: () => void;
-  onSpeak: (text: string) => void;
 }
 
 const FlashCardFlip = React.memo(function FlashCardFlip({
   card,
   isFlipped,
   onFlip,
-  onSpeak,
 }: FlashCardFlipProps) {
   const theme = useTheme<Theme>();
   const rotation = useRef(new Animated.Value(0)).current;
@@ -88,14 +85,6 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
         <Text variant="h2" textAlign="center" color="textPrimary" style={{ lineHeight: 36 }}>
           {text}
         </Text>
-        <TouchableOpacity
-          onPress={() => onSpeak(text)}
-          style={{ position: 'absolute', top: 16, right: 16 }}
-          accessibilityLabel={`Ouvir ${label}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <SpeakerHigh size={24} color={theme.colors.primary} weight="fill" />
-        </TouchableOpacity>
       </Box>
     );
   }

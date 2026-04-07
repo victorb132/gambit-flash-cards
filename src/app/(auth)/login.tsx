@@ -1,127 +1,231 @@
 import React, { useState } from 'react';
-import { ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { Envelope, Lock } from 'phosphor-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Box from '../../components/ui/Box';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Envelope, Lock, ArrowLeft, Books, Globe, Atom, Brain, Flask } from 'phosphor-react-native';
 import Text from '../../components/ui/Text';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { Theme } from '../../theme';
 
+const FLOATING_ICONS = [
+  { Icon: Books, top: '6%',  left: '6%',   size: 34, opacity: 0.18, rotate: '-15deg' },
+  { Icon: Globe, top: '4%',  right: '10%', size: 26, opacity: 0.14, rotate: '12deg'  },
+  { Icon: Atom,  top: '16%', left: '24%',  size: 20, opacity: 0.12, rotate: '0deg'   },
+  { Icon: Brain, top: '12%', right: '26%', size: 30, opacity: 0.16, rotate: '-8deg'  },
+  { Icon: Flask, top: '24%', left: '4%',   size: 24, opacity: 0.13, rotate: '20deg'  },
+];
+
 export default function LoginScreen() {
   const theme = useTheme<Theme>();
+  const insets = useSafeAreaInsets();
   const { isSubmitting, errors, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   async function handleLogin() {
     const success = await login(email, password);
-    if (success) {
-      router.replace('/(main)/decks');
-    }
+    if (success) router.replace('/(main)/decks');
   }
 
+  const inputStyle = {
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.white,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    fontFamily: 'Poppins_400Regular',
+    color: theme.colors.textPrimary,
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={[styles.container, { backgroundColor: theme.colors.primaryDark }]}>
+        <View style={[styles.upperSection, { paddingTop: insets.top + 16 }]}>
+          {FLOATING_ICONS.map(({ Icon, top, left, right, size, opacity, rotate }, i) => (
+            <View
+              key={i}
+              style={[
+                styles.floatingIcon,
+                { top: top as any, left: left as any, right: right as any,
+                  opacity, transform: [{ rotate }] },
+              ]}
+            >
+              <Icon size={size} color={theme.colors.surfaceLight} weight="fill" />
+            </View>
+          ))}
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <ArrowLeft size={22} color={theme.colors.surfaceLight} weight="bold" />
+          </TouchableOpacity>
+
+          <View style={styles.upperContent}>
+            <Text style={{ fontSize: 28, fontFamily: 'Poppins_700Bold', color: theme.colors.surfaceLight }}>
+              Bem-vindo de volta
+            </Text>
+            <Text style={{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: theme.colors.surface, marginTop: 6, opacity: 0.85 }}>
+              Entre para continuar estudando
+            </Text>
+          </View>
+        </View>
+
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Decorative top accent */}
-          <Box
-            height={180}
-            backgroundColor="primaryDark"
-            alignItems="center"
-            justifyContent="flex-end"
-            paddingBottom="l"
-            style={{ borderBottomLeftRadius: 48, borderBottomRightRadius: 48 }}
-          />
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.surfaceLight,
+                paddingBottom: insets.bottom + 32,
+              },
+            ]}
+          >
+            <View style={styles.fieldGroup}>
+              <Text style={labelStyle(theme)}>E-mail</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.iconLeft}>
+                  <Envelope size={18} color={theme.colors.textSecondary} />
+                </View>
+                <TextInput
+                  style={[inputStyle, { paddingLeft: 44 }]}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="seu@email.com"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  returnKeyType="next"
+                />
+              </View>
+              {errors.email && <Text style={errorTextStyle(theme)}>{errors.email}</Text>}
+            </View>
 
-          <Box flex={1} padding="xl" style={{ marginTop: -48 }}>
-            {/* Logo card */}
-            <Box
-              backgroundColor="white"
-              borderRadius="xl"
-              padding="l"
-              alignItems="center"
-              marginBottom="xl"
-              style={{
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.12,
-                shadowRadius: 12,
-                elevation: 5,
-              }}
+            <View style={styles.fieldGroup}>
+              <Text style={labelStyle(theme)}>Senha</Text>
+              <View style={styles.inputWrapper}>
+                <View style={styles.iconLeft}>
+                  <Lock size={18} color={theme.colors.textSecondary} />
+                </View>
+                <TextInput
+                  style={[inputStyle, { paddingLeft: 44 }]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Mínimo 6 caracteres"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
+              {errors.password && <Text style={errorTextStyle(theme)}>{errors.password}</Text>}
+            </View>
+
+            {errors.general && (
+              <View style={[styles.errorBox, { backgroundColor: theme.colors.error }]}>
+                <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: theme.colors.white, textAlign: 'center' }}>
+                  {errors.general}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                { backgroundColor: isSubmitting ? theme.colors.primary : theme.colors.primaryDark },
+              ]}
+              onPress={handleLogin}
+              disabled={isSubmitting}
+              activeOpacity={0.85}
             >
-              <Text style={{ fontSize: 56 }}>🃏</Text>
-              <Text variant="h2" marginTop="s" color="primaryDark" textAlign="center">
-                Gambit Flash Cards
+              <Text style={{ fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: theme.colors.surfaceLight }}>
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
               </Text>
-              <Text variant="bodySmall" textAlign="center" marginTop="xs" color="textSecondary">
-                Domine qualquer assunto, uma carta por vez.
-              </Text>
-            </Box>
+            </TouchableOpacity>
 
-            {/* Form */}
-            <Box>
-              <Input
-                label="E-mail"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="seu@email.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                error={errors.email}
-                leftIcon={<Envelope size={20} color={theme.colors.textSecondary} />}
-                returnKeyType="next"
-              />
-
-              <Input
-                label="Senha"
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Mínimo 6 caracteres"
-                isPassword
-                error={errors.password}
-                leftIcon={<Lock size={20} color={theme.colors.textSecondary} />}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-
-              {errors.general && (
-                <Box
-                  backgroundColor="error"
-                  borderRadius="m"
-                  padding="m"
-                  marginBottom="m"
-                  style={{ opacity: 0.9 }}
-                >
-                  <Text variant="bodySmall" color="white" textAlign="center">
-                    {errors.general}
-                  </Text>
-                </Box>
-              )}
-
-              <Box marginTop="s">
-                <Button label="Entrar" onPress={handleLogin} isLoading={isSubmitting} fullWidth />
-              </Box>
-
-              <Text variant="caption" textAlign="center" color="textSecondary" marginTop="xl">
-                Demo: usuario@gambit.com / 123456
-              </Text>
-            </Box>
-          </Box>
+            <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: theme.colors.textSecondary, textAlign: 'center', marginTop: 20, opacity: 0.7 }}>
+              Demo: usuario@gambit.com / 123456
+            </Text>
+          </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  upperSection: {
+    height: 210,
+    paddingHorizontal: 24,
+    justifyContent: 'flex-end',
+    paddingBottom: 28,
+  },
+  floatingIcon: { position: 'absolute' },
+  backButton: {
+    position: 'absolute',
+    top: 56,
+    left: 20,
+    zIndex: 10,
+  },
+  upperContent: { marginTop: 8 },
+  card: {
+    flex: 1,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 32,
+    paddingHorizontal: 24,
+  },
+  fieldGroup: { marginBottom: 20 },
+  inputWrapper: { position: 'relative' },
+  iconLeft: {
+    position: 'absolute',
+    left: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  errorBox: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  submitButton: {
+    height: 54,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+});
+
+function labelStyle(theme: Theme) {
+  return {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    color: theme.colors.textPrimary,
+    marginBottom: 8,
+  };
+}
+
+function errorTextStyle(theme: Theme) {
+  return {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: theme.colors.error,
+    marginTop: 4,
+  };
 }

@@ -10,6 +10,7 @@ interface StudyState {
   summary: StudySessionSummary | null;
   cardStartTime: number;
   isVoiceEnabled: boolean;
+  isSpeechEnabled: boolean;
   setSession: (session: StudySession) => void;
   setCards: (cards: FlashCard[]) => void;
   setFlipped: (flipped: boolean) => void;
@@ -17,6 +18,7 @@ interface StudyState {
   setSummary: (summary: StudySessionSummary) => void;
   resetStudy: () => void;
   toggleVoice: () => void;
+  toggleSpeech: () => void;
   getElapsedMs: () => number;
   resetCardTimer: () => void;
 }
@@ -29,6 +31,7 @@ export const useStudyStore = create<StudyState>((set, get) => ({
   summary: null,
   cardStartTime: Date.now(),
   isVoiceEnabled: true,
+  isSpeechEnabled: true,
 
   setSession: (session) => set({ session }),
   setCards: (cards) => set({ cards }),
@@ -50,6 +53,7 @@ export const useStudyStore = create<StudyState>((set, get) => ({
       cardStartTime: Date.now(),
     }),
   toggleVoice: () => set((state) => ({ isVoiceEnabled: !state.isVoiceEnabled })),
+  toggleSpeech: () => set((state) => ({ isSpeechEnabled: !state.isSpeechEnabled })),
   getElapsedMs: () => Date.now() - get().cardStartTime,
   resetCardTimer: () => set({ cardStartTime: Date.now() }),
 }));

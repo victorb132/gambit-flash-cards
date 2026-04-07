@@ -1,18 +1,52 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as Speech from "expo-speech";
 
-// Set a specific voice identifier here, or null to use the system default.
-// Run getAvailableVoices() once to see what's available on your device.
-const VOICE_IDENTIFIER: string | null = null;
-
 export function useTextToSpeech() {
+  const voiceId = useRef<string | null>(null);
+
+  // On mount, pick the highest-quality pt-BR voice available on the device.
+  // iOS: prefers "Enhanced" (neural) voices like "Luciana (Enhanced)".
+  // Android: prefers Google's high-quality voices when available.
+  useEffect(() => {
+    async function pickBestVoice() {
+      try {
+        const all = await Speech.getAvailableVoicesAsync();
+        const pt = all.filter((v) => v.language.startsWith("pt"));
+
+        // Tier 1 – Enhanced quality, pt-BR
+        const enhancedBR = pt.find(
+          (v) =>
+            v.language === "pt-BR" &&
+            v.quality === Speech.VoiceQuality.Enhanced
+        );
+        if (enhancedBR) { voiceId.current = enhancedBR.identifier; return; }
+
+        // Tier 2 – Any Enhanced pt voice
+        const enhancedPT = pt.find(
+          (v) => v.quality === Speech.VoiceQuality.Enhanced
+        );
+        if (enhancedPT) { voiceId.current = enhancedPT.identifier; return; }
+
+        // Tier 3 – Default quality pt-BR
+        const defaultBR = pt.find((v) => v.language === "pt-BR");
+        if (defaultBR) { voiceId.current = defaultBR.identifier; return; }
+
+        // Tier 4 – Any pt voice
+        if (pt[0]) voiceId.current = pt[0].identifier;
+      } catch {
+        // Keep null — system default will be used
+      }
+    }
+    pickBestVoice();
+  }, []);
+
   const speak = useCallback((text: string) => {
     Speech.stop();
     Speech.speak(text, {
       language: "pt-BR",
       pitch: 1.0,
-      rate: 0.9,
-      ...(VOICE_IDENTIFIER ? { voice: VOICE_IDENTIFIER } : {}),
+      rate: 0.88,
+      ...(voiceId.current ? { voice: voiceId.current } : {}),
     });
   }, []);
 
@@ -20,19 +54,5 @@ export function useTextToSpeech() {
     Speech.stop();
   }, []);
 
-  // Call this once (ex: via console.log) to discover voices available on the device
-  const getAvailableVoices = useCallback(async () => {
-    const voices = await Speech.getAvailableVoicesAsync();
-    const ptVoices = voices.filter((v) => v.language.startsWith("pt"));
-    console.log("=== Vozes pt-BR disponíveis ===");
-    ptVoices.forEach((v) =>
-      console.log(
-        `name: ${v.name} | id: ${v.identifier} | quality: ${v.quality}`,
-      ),
-    );
-    console.log("=== Todas as vozes ===", voices);
-    return voices;
-  }, []);
-
-  return { speak, stop, getAvailableVoices };
+  return { speak, stop };
 }

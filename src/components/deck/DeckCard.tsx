@@ -7,6 +7,7 @@ import Text from '../ui/Text';
 import ProgressBar from '../ui/ProgressBar';
 import { Deck } from '../../types/deck';
 import { formatRelativeDate } from '../../utils/formatters';
+import { DeckIconBox } from '../../utils/deckIcon';
 import { Theme } from '../../theme';
 
 interface DeckCardProps {
@@ -43,16 +44,7 @@ const DeckCard = React.memo(function DeckCard({ deck, onPress, onDelete }: DeckC
       >
         <Box flexDirection="row" alignItems="center" justifyContent="space-between">
           <Box flexDirection="row" alignItems="center" flex={1}>
-            <Box
-              width={52}
-              height={52}
-              borderRadius="m"
-              backgroundColor="surfaceLight"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Text style={{ fontSize: 28 }}>{deck.coverEmoji}</Text>
-            </Box>
+            <DeckIconBox emoji={deck.coverEmoji} deckId={deck.id} colors={theme.colors} />
             <Box marginLeft="m" flex={1}>
               <Text variant="h3" numberOfLines={1}>
                 {deck.title}
