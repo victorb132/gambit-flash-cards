@@ -1,6 +1,6 @@
 import React from 'react';
-import Box from './Box';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import { Theme } from '@/theme';
 
 interface Segment {
   value: number;

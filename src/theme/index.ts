@@ -1,7 +1,7 @@
 import { createTheme } from '@shopify/restyle';
-import { lightColors, darkColors } from './colors';
-import { spacing, borderRadius } from './spacing';
-import { textVariants } from './typography';
+import { lightColors, darkColors } from '@/theme/colors';
+import { spacing, borderRadius } from '@/theme/spacing';
+import { textVariants } from '@/theme/typography';
 
 export const lightTheme = createTheme({
   colors: lightColors,

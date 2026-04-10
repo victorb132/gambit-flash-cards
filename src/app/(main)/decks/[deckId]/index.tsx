@@ -10,21 +10,21 @@ import {
   PencilSimple, X, Plus, Trash, DotsThreeVertical, MagnifyingGlass,
 } from 'phosphor-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Box from '../../../../components/ui/Box';
-import Text from '../../../../components/ui/Text';
-import Button from '../../../../components/ui/Button';
-import ProgressBar from '../../../../components/ui/ProgressBar';
-import EmptyState from '../../../../components/common/EmptyState';
-import FlashcardListSkeleton from '../../../../components/common/FlashcardListSkeleton';
-import ImagePickerField from '../../../../components/ui/ImagePickerField';
-import { useFlashcards } from '../../../../hooks/useFlashcards';
-import { useDeckStore } from '../../../../stores/deckStore';
-import { updateFlashcard, deleteFlashcard as deleteFlashcardApi, resetFlashcardSRS as resetFlashcardSRSApi } from '../../../../services/api/flashcards';
-import { updateDeck as updateDeckApi, deleteDeck as deleteDeckApi } from '../../../../services/api/decks';
-import { DeckIconBox } from '../../../../utils/deckIcon';
-import { FlashCard } from '../../../../types/flashcard';
-import { Theme } from '../../../../theme';
-import { truncate } from '../../../../utils/formatters';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import Button from '@/components/ui/Button';
+import ProgressBar from '@/components/ui/ProgressBar';
+import EmptyState from '@/components/common/EmptyState';
+import FlashcardListSkeleton from '@/components/common/FlashcardListSkeleton';
+import ImagePickerField from '@/components/ui/ImagePickerField';
+import { useFlashcards } from '@/hooks/useFlashcards';
+import { useDeckStore } from '@/stores/deckStore';
+import { updateFlashcard, deleteFlashcard as deleteFlashcardApi, resetFlashcardSRS as resetFlashcardSRSApi } from '@/services/api/flashcards';
+import { updateDeck as updateDeckApi, deleteDeck as deleteDeckApi } from '@/services/api/decks';
+import { DeckIconBox } from '@/utils/deckIcon';
+import { FlashCard } from '@/types/flashcard';
+import { Theme } from '@/theme';
+import { truncate } from '@/utils/formatters';
 
 const EMOJI_OPTIONS = ['📚', '📖', '💡', '🧠', '💻', '🧬', '🔬', '🌍', '🎨', '🏆', '🎵', '🧩', '🗣️', '❤️', '📊'];
 

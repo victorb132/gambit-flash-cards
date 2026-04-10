@@ -2,13 +2,13 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { useTheme } from "@shopify/restyle";
 import { Trash } from "phosphor-react-native";
-import Box from "../ui/Box";
-import Text from "../ui/Text";
-import ProgressBar from "../ui/ProgressBar";
-import { Deck } from "../../types/deck";
-import { formatRelativeDate } from "../../utils/formatters";
-import { DeckIconBox } from "../../utils/deckIcon";
-import { Theme } from "../../theme";
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import ProgressBar from '@/components/ui/ProgressBar';
+import { Deck } from '@/types/deck';
+import { formatRelativeDate } from '@/utils/formatters';
+import { DeckIconBox } from '@/utils/deckIcon';
+import { Theme } from '@/theme';
 
 interface DeckCardProps {
   deck: Deck;

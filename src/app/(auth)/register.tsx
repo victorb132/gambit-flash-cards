@@ -3,10 +3,10 @@ import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Pl
 import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Envelope, Lock, ArrowLeft, Brain, Trophy, Lightbulb, Code, MusicNote } from 'phosphor-react-native';
-import Text from '../../components/ui/Text';
-import { useAuth } from '../../hooks/useAuth';
-import { Theme } from '../../theme';
+import { User, Envelope, Lock, ArrowLeft, Brain, Trophy, Lightbulb, Code, MusicNote, Eye, EyeSlash } from 'phosphor-react-native';
+import Text from '@/components/ui/Text';
+import { useAuth } from '@/hooks/useAuth';
+import { Theme } from '@/theme';
 
 const FLOATING_ICONS = [
   { Icon: Brain,     top: '6%',  left: '8%',   size: 32, opacity: 0.10, rotate: '-15deg', speed: 2400 },
@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const floatAnims = useRef(FLOATING_ICONS.map(() => new Animated.Value(0))).current;
 
@@ -177,15 +178,26 @@ export default function RegisterScreen() {
                   <Lock size={16} color={theme.colors.textSecondary} />
                 </View>
                 <TextInput
-                  style={[inputStyle, { paddingLeft: 40 }]}
+                  style={[inputStyle, { paddingLeft: 40, paddingRight: 40 }]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Mínimo 6 caracteres"
                   placeholderTextColor={theme.colors.textSecondary}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   returnKeyType="done"
                   onSubmitEditing={handleRegister}
                 />
+                <TouchableOpacity
+                  style={styles.iconRight}
+                  onPress={() => setShowPassword(v => !v)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword
+                    ? <EyeSlash size={16} color={theme.colors.textSecondary} />
+                    : <Eye size={16} color={theme.colors.textSecondary} />
+                  }
+                </TouchableOpacity>
               </View>
               {errors.password && <Text style={errorTextStyle(theme)}>{errors.password}</Text>}
             </View>
@@ -253,6 +265,14 @@ const styles = StyleSheet.create({
   iconLeft: {
     position: 'absolute',
     left: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  iconRight: {
+    position: 'absolute',
+    right: 12,
     top: 0,
     bottom: 0,
     justifyContent: 'center',

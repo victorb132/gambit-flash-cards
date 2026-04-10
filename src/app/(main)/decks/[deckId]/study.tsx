@@ -7,20 +7,20 @@ import {
   Microphone, MicrophoneSlash, SpeakerHigh, SpeakerSlash, Shuffle,
 } from 'phosphor-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Box from '../../../../components/ui/Box';
-import Text from '../../../../components/ui/Text';
-import FlashCardFlip from '../../../../components/flashcard/FlashCardFlip';
-import VoiceIndicator from '../../../../components/flashcard/VoiceIndicator';
-import { useStudySession } from '../../../../hooks/useStudySession';
-import { useTextToSpeech } from '../../../../hooks/useTextToSpeech';
-import { useVoiceRecognition, isSpeechRecognitionAvailable } from '../../../../hooks/useVoiceRecognition';
-import { useDeckStore } from '../../../../stores/deckStore';
-import { getFlashcards as fetchFlashcardsApi } from '../../../../services/api/flashcards';
-import { StudyResult } from '../../../../types/study';
-import { Theme } from '../../../../theme';
-import { formatDuration } from '../../../../utils/formatters';
-import StudySkeleton from '../../../../components/common/StudySkeleton';
-import { SRS_SWIPE_THRESHOLD } from '../../../../utils/constants';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import FlashCardFlip from '@/components/flashcard/FlashCardFlip';
+import VoiceIndicator from '@/components/flashcard/VoiceIndicator';
+import { useStudySession } from '@/hooks/useStudySession';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { useVoiceRecognition, isSpeechRecognitionAvailable } from '@/hooks/useVoiceRecognition';
+import { useDeckStore } from '@/stores/deckStore';
+import { getFlashcards as fetchFlashcardsApi } from '@/services/api/flashcards';
+import { StudyResult } from '@/types/study';
+import { Theme } from '@/theme';
+import { formatDuration } from '@/utils/formatters';
+import StudySkeleton from '@/components/common/StudySkeleton';
+import { SRS_SWIPE_THRESHOLD } from '@/utils/constants';
 
 const voiceAvailable = isSpeechRecognitionAvailable();
 

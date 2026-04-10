@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, STORAGE_KEYS } from '../../utils/constants';
+import { API_BASE_URL, STORAGE_KEYS } from '@/utils/constants';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import Box from '../ui/Box';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import { Theme } from '@/theme';
 
 /** Animated skeleton loader for deck list items */
 const DeckSkeleton = React.memo(function DeckSkeleton() {

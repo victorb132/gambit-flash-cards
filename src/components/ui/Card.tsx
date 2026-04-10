@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, TouchableOpacityProps, Platform } from 'react-native';
-import Box from './Box';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import { Theme } from '@/theme';
 import { useTheme } from '@shopify/restyle';
 
 interface CardProps extends TouchableOpacityProps {

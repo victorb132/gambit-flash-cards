@@ -17,7 +17,7 @@ import {
   PuzzlePiece,
   Heartbeat,
 } from 'phosphor-react-native';
-import { AppColors } from '../theme/colors';
+import { AppColors } from '@/theme/colors';
 
 type IconComponent = React.ComponentType<{ size: number; color: string; weight?: string }>;
 

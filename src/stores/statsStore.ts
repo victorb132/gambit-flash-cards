@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../utils/constants';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 export interface StudyDay {
   date: string; // YYYY-MM-DD

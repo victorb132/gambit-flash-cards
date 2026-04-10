@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Box from '../ui/Box';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import { Theme } from '@/theme';
 
 const StudySkeleton = React.memo(function StudySkeleton() {
   const theme = useTheme<Theme>();

@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { useStudyStore } from '../stores/studyStore';
-import { useDeckStore } from '../stores/deckStore';
-import { useStatsStore } from '../stores/statsStore';
-import { startStudySession, answerCard, completeSession } from '../services/api/flashcards';
-import { StudyResult } from '../types/study';
-import { isDue, getInitialSRS } from '../utils/srs';
+import { useStudyStore } from '@/stores/studyStore';
+import { useDeckStore } from '@/stores/deckStore';
+import { useStatsStore } from '@/stores/statsStore';
+import { startStudySession, answerCard, completeSession } from '@/services/api/flashcards';
+import { StudyResult } from '@/types/study';
+import { isDue, getInitialSRS } from '@/utils/srs';
 
 function shuffleArray<T>(arr: T[]): T[] {
   const out = [...arr];

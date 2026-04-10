@@ -4,10 +4,10 @@ import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
 import { ArrowLeft } from 'phosphor-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Box from '../../components/ui/Box';
-import Text from '../../components/ui/Text';
-import { useStatsStore } from '../../stores/statsStore';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import { useStatsStore } from '@/stores/statsStore';
+import { Theme } from '@/theme';
 
 function formatTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000);

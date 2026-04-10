@@ -1,5 +1,5 @@
-import { USE_MOCK } from '../../utils/constants';
-import { Deck, CreateDeckRequest, CreateDeckResponse } from '../../types/deck';
+import { USE_MOCK } from '@/utils/constants';
+import { Deck, CreateDeckRequest, CreateDeckResponse } from '@/types/deck';
 import {
   mockGetDecks,
   mockGetDeck,
@@ -7,8 +7,8 @@ import {
   mockCreateManualDeck,
   mockUpdateDeck,
   mockDeleteDeck,
-} from '../mock/handlers';
-import apiClient from './client';
+} from '@/services/mock/handlers';
+import apiClient from '@/services/api/client';
 
 export async function getDecks(): Promise<{ decks: Deck[] }> {
   if (USE_MOCK) return mockGetDecks();

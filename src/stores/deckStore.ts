@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { Deck } from '../types/deck';
-import { FlashCard } from '../types/flashcard';
-import { StudySessionSummary } from '../types/study';
-import { SRSData, getDueCount } from '../utils/srs';
+import { Deck } from '@/types/deck';
+import { FlashCard } from '@/types/flashcard';
+import { StudySessionSummary } from '@/types/study';
+import { SRSData, getDueCount } from '@/utils/srs';
 
 interface DeckState {
   decks: Deck[];

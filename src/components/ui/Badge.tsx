@@ -1,7 +1,7 @@
 import React from 'react';
-import Box from './Box';
-import Text from './Text';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import { Theme } from '@/theme';
 
 interface BadgeProps {
   label: string;

@@ -1,5 +1,5 @@
-import { StudyResult } from './study';
-import { SRSData } from '../utils/srs';
+import { StudyResult } from '@/types/study';
+import { SRSData } from '@/utils/srs';
 
 export interface FlashCardStats {
   timesStudied: number;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { VOICE_COMMANDS } from '../utils/constants';
+import { VOICE_COMMANDS } from '@/utils/constants';
 
 type VoiceCommand = 'flip' | 'correct' | 'wrong' | 'doubt' | null;
 

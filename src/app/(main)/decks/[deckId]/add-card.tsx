@@ -11,13 +11,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
 import { ArrowLeft } from 'phosphor-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Box from '../../../../components/ui/Box';
-import Text from '../../../../components/ui/Text';
-import Button from '../../../../components/ui/Button';
-import ImagePickerField from '../../../../components/ui/ImagePickerField';
-import { createFlashcard } from '../../../../services/api/flashcards';
-import { useDeckStore } from '../../../../stores/deckStore';
-import { Theme } from '../../../../theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import Button from '@/components/ui/Button';
+import ImagePickerField from '@/components/ui/ImagePickerField';
+import { createFlashcard } from '@/services/api/flashcards';
+import { useDeckStore } from '@/stores/deckStore';
+import { Theme } from '@/theme';
 
 export default function AddCardScreen() {
   const theme = useTheme<Theme>();

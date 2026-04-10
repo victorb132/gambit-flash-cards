@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { Theme } from '../../theme';
-import Box from './Box';
-import Text from './Text';
+import { Theme } from '@/theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'ghost';
 

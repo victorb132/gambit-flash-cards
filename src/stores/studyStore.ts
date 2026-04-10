@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { StudySession, StudySessionSummary, StudyResult } from '../types/study';
-import { FlashCard } from '../types/flashcard';
+import { StudySession, StudySessionSummary, StudyResult } from '@/types/study';
+import { FlashCard } from '@/types/flashcard';
 
 interface LastAnsweredState {
   card: FlashCard;

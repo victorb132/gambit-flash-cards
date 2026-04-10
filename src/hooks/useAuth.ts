@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { login as loginApi, register as registerApi, logout as logoutApi, getMe } from '../services/api/auth';
-import { isValidEmail, isValidPassword } from '../utils/validators';
+import { useAuthStore } from '@/stores/authStore';
+import { login as loginApi, register as registerApi, logout as logoutApi, getMe } from '@/services/api/auth';
+import { isValidEmail, isValidPassword } from '@/utils/validators';
 
 interface AuthFormErrors {
   name?: string;

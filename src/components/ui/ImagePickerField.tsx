@@ -4,9 +4,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { useTheme } from '@shopify/restyle';
 import { Image as ImageIcon, X } from 'phosphor-react-native';
-import Box from './Box';
-import Text from './Text';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import { Theme } from '@/theme';
 
 interface ImagePickerFieldProps {
   label: string;

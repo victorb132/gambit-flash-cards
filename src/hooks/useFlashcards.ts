@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { useDeckStore } from '../stores/deckStore';
-import { getFlashcards } from '../services/api/flashcards';
+import { useDeckStore } from '@/stores/deckStore';
+import { getFlashcards } from '@/services/api/flashcards';
 
 export function useFlashcards(deckId: string) {
   const { flashcardsByDeck, isLoadingFlashcards, setFlashcards, setLoadingFlashcards } =

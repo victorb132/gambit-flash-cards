@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { useDeckStore } from '../stores/deckStore';
-import { getDecks, deleteDeck } from '../services/api/decks';
-import { Deck } from '../types/deck';
+import { useDeckStore } from '@/stores/deckStore';
+import { getDecks, deleteDeck } from '@/services/api/decks';
+import { Deck } from '@/types/deck';
 
 export function useDecks() {
   const { decks, isLoadingDecks, setDecks, removeDeck, setLoadingDecks } = useDeckStore();

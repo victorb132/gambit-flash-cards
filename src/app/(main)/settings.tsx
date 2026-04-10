@@ -5,18 +5,18 @@ import { useTheme } from '@shopify/restyle';
 import { ArrowLeft, Sun, Moon, Bell, BellSlash, Trash, User } from 'phosphor-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Box from '../../components/ui/Box';
-import Text from '../../components/ui/Text';
-import { useAppTheme } from '../../theme/ThemeProvider';
-import { useAuth } from '../../hooks/useAuth';
-import { Theme } from '../../theme';
-import { STORAGE_KEYS } from '../../utils/constants';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { useAuth } from '@/hooks/useAuth';
+import { Theme } from '@/theme';
+import { STORAGE_KEYS } from '@/utils/constants';
 import {
   loadNotificationSettings,
   scheduleDailyReminder,
   cancelAllNotifications,
   requestNotificationPermission,
-} from '../../utils/notifications';
+} from '@/utils/notifications';
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   const theme = useTheme<Theme>();

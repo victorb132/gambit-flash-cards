@@ -1,7 +1,7 @@
-import { USE_MOCK } from '../../utils/constants';
-import { FlashCard } from '../../types/flashcard';
-import { StudySession, StudyResult, StudySessionSummary } from '../../types/study';
-import { SRSData } from '../../utils/srs';
+import { USE_MOCK } from '@/utils/constants';
+import { FlashCard } from '@/types/flashcard';
+import { StudySession, StudyResult, StudySessionSummary } from '@/types/study';
+import { SRSData } from '@/utils/srs';
 import {
   mockGetFlashcards,
   mockUpdateFlashcard,
@@ -11,8 +11,8 @@ import {
   mockStartStudySession,
   mockAnswerCard,
   mockCompleteSession,
-} from '../mock/handlers';
-import apiClient from './client';
+} from '@/services/mock/handlers';
+import apiClient from '@/services/api/client';
 
 export async function getFlashcards(deckId: string): Promise<{ flashcards: FlashCard[] }> {
   if (USE_MOCK) return mockGetFlashcards(deckId);

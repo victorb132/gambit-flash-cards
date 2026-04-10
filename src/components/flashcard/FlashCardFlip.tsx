@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TouchableOpacity, Platform, Image } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import Box from '../ui/Box';
-import Text from '../ui/Text';
-import { FlashCard } from '../../types/flashcard';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import { FlashCard } from '@/types/flashcard';
+import { Theme } from '@/theme';
 
 interface FlashCardFlipProps {
   card: FlashCard;

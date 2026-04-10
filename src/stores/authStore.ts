@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../types/auth';
-import { STORAGE_KEYS } from '../utils/constants';
+import { User } from '@/types/auth';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 interface AuthState {
   user: User | null;

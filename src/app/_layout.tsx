@@ -3,9 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AppThemeProvider } from '../theme/ThemeProvider';
-import { useAuthStore } from '../stores/authStore';
-import LoadingState from '../components/common/LoadingState';
+import { AppThemeProvider } from '@/theme/ThemeProvider';
+import { useAuthStore } from '@/stores/authStore';
+import LoadingState from '@/components/common/LoadingState';
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, loadPersistedAuth } = useAuthStore();

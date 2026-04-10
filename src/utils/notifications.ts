@@ -3,7 +3,7 @@
  * All functions fail silently if the package is not installed.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from './constants';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 function getNotifications(): any {
   try {

@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { ThemeProvider as RestyleThemeProvider } from '@shopify/restyle';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lightTheme, darkTheme, Theme } from './index';
+import { lightTheme, darkTheme, Theme } from '@/theme/index';
 
 const THEME_KEY = '@gambit:theme';
 

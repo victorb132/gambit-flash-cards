@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS, MOCK_CREDENTIALS } from '../../utils/constants';
-import { LoginRequest, RegisterRequest, LoginResponse, User } from '../../types/auth';
-import { Deck, CreateDeckRequest, CreateDeckResponse } from '../../types/deck';
-import { FlashCard } from '../../types/flashcard';
-import { StudySession, StudyCardResult, StudyResult, StudySessionSummary } from '../../types/study';
-import { simulateDelay, simulateAIDelay } from './delay';
-import { SEED_DECKS, SEED_FLASHCARDS, FLASHCARD_TEMPLATES, matchPromptToTemplate } from './data';
-import { calculateNextSRS, getInitialSRS, getDueCount } from '../../utils/srs';
+import { STORAGE_KEYS, MOCK_CREDENTIALS } from '@/utils/constants';
+import { LoginRequest, RegisterRequest, LoginResponse, User } from '@/types/auth';
+import { Deck, CreateDeckRequest, CreateDeckResponse } from '@/types/deck';
+import { FlashCard } from '@/types/flashcard';
+import { StudySession, StudyCardResult, StudyResult, StudySessionSummary } from '@/types/study';
+import { simulateDelay, simulateAIDelay } from '@/services/mock/delay';
+import { SEED_DECKS, SEED_FLASHCARDS, FLASHCARD_TEMPLATES, matchPromptToTemplate } from '@/services/mock/data';
+import { calculateNextSRS, getInitialSRS, getDueCount } from '@/utils/srs';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

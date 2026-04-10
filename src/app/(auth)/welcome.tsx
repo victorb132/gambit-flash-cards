@@ -15,8 +15,8 @@ import {
   Code,
   Lightbulb,
 } from 'phosphor-react-native';
-import Text from '../../components/ui/Text';
-import { Theme } from '../../theme';
+import Text from '@/components/ui/Text';
+import { Theme } from '@/theme';
 
 const FLOATING_ICONS = [
   { Icon: Books,     top: '8%',  left: '6%',   size: 36, opacity: 0.12, rotate: '-15deg', speed: 2400 },

@@ -1,4 +1,4 @@
-import { FlashCard } from './flashcard';
+import { FlashCard } from '@/types/flashcard';
 
 export interface DeckProgress {
   totalCards: number;

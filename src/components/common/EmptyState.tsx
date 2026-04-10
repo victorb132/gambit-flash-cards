@@ -1,7 +1,7 @@
 import React from 'react';
-import Box from '../ui/Box';
-import Text from '../ui/Text';
-import Button from '../ui/Button';
+import Box from '@/components/ui/Box';
+import Text from '@/components/ui/Text';
+import Button from '@/components/ui/Button';
 
 interface EmptyStateProps {
   emoji?: string;

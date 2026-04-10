@@ -1,5 +1,5 @@
-import { Deck } from '../../types/deck';
-import { FlashCard } from '../../types/flashcard';
+import { Deck } from '@/types/deck';
+import { FlashCard } from '@/types/flashcard';
 
 /** Pre-seeded deck data */
 export const SEED_DECKS: Deck[] = [

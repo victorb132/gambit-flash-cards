@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import Box from '../ui/Box';
-import { Theme } from '../../theme';
+import Box from '@/components/ui/Box';
+import { Theme } from '@/theme';
 
 /** Generic skeleton loading overlay */
 const LoadingState = React.memo(function LoadingState() {
