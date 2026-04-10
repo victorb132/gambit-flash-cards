@@ -1,6 +1,13 @@
 import { USE_MOCK } from '../../utils/constants';
 import { Deck, CreateDeckRequest, CreateDeckResponse } from '../../types/deck';
-import { mockGetDecks, mockGetDeck, mockCreateDeck, mockCreateManualDeck, mockDeleteDeck } from '../mock/handlers';
+import {
+  mockGetDecks,
+  mockGetDeck,
+  mockCreateDeck,
+  mockCreateManualDeck,
+  mockUpdateDeck,
+  mockDeleteDeck,
+} from '../mock/handlers';
 import apiClient from './client';
 
 export async function getDecks(): Promise<{ decks: Deck[] }> {
@@ -34,6 +41,15 @@ export async function createManualDeck(
     coverEmoji: emoji,
     cards,
   });
+  return response.data;
+}
+
+export async function updateDeck(
+  deckId: string,
+  patch: { title: string; description: string; coverEmoji: string }
+): Promise<{ deck: Deck }> {
+  if (USE_MOCK) return mockUpdateDeck(deckId, patch);
+  const response = await apiClient.put<{ deck: Deck }>(`/decks/${deckId}`, patch);
   return response.data;
 }
 

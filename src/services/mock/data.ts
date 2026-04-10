@@ -18,6 +18,7 @@ export const SEED_DECKS: Deck[] = [
       learning: 1,
       notStarted: 1,
       completionPercentage: 60,
+      dueCount: 2,
     },
   },
   {
@@ -35,6 +36,7 @@ export const SEED_DECKS: Deck[] = [
       learning: 0,
       notStarted: 5,
       completionPercentage: 0,
+      dueCount: 5,
     },
   },
   {
@@ -52,6 +54,7 @@ export const SEED_DECKS: Deck[] = [
       learning: 3,
       notStarted: 0,
       completionPercentage: 40,
+      dueCount: 3,
     },
   },
 ];

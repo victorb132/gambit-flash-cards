@@ -1,4 +1,5 @@
 import { StudyResult } from './study';
+import { SRSData } from '../utils/srs';
 
 export interface FlashCardStats {
   timesStudied: number;
@@ -19,4 +20,5 @@ export interface FlashCard {
   order: number;
   createdAt: string;
   stats: FlashCardStats;
+  srs?: SRSData;
 }

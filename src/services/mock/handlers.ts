@@ -6,6 +6,7 @@ import { FlashCard } from '../../types/flashcard';
 import { StudySession, StudyCardResult, StudyResult, StudySessionSummary } from '../../types/study';
 import { simulateDelay, simulateAIDelay } from './delay';
 import { SEED_DECKS, SEED_FLASHCARDS, FLASHCARD_TEMPLATES, matchPromptToTemplate } from './data';
+import { calculateNextSRS, getInitialSRS, getDueCount } from '../../utils/srs';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -28,9 +29,9 @@ class MockError extends Error {
 async function getDecks(): Promise<Deck[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEYS.MOCK_DECKS);
   if (!raw) {
-    // Seed initial data on first access
-    await AsyncStorage.setItem(STORAGE_KEYS.MOCK_DECKS, JSON.stringify(SEED_DECKS));
-    return SEED_DECKS;
+    const seeded = SEED_DECKS.map((d) => ({ ...d, progress: { ...d.progress, dueCount: d.progress.dueCount ?? d.progress.totalCards } }));
+    await AsyncStorage.setItem(STORAGE_KEYS.MOCK_DECKS, JSON.stringify(seeded));
+    return seeded;
   }
   return JSON.parse(raw);
 }
@@ -122,7 +123,26 @@ export async function mockLogout(): Promise<{ message: string }> {
 export async function mockGetDecks(): Promise<{ decks: Deck[] }> {
   await simulateDelay();
   const decks = await getDecks();
-  return { decks };
+  const allFlashcards = await getFlashcards();
+  // Recompute all progress fields from actual SRS data on every read
+  const updated = decks.map((d) => {
+    const cards = allFlashcards[d.id] ?? [];
+    const mastered = cards.filter((c) => (c.srs?.interval ?? 0) >= 7).length;
+    const notStarted = cards.filter((c) => c.stats.timesStudied === 0).length;
+    const learning = Math.max(0, d.cardCount - mastered - notStarted);
+    return {
+      ...d,
+      progress: {
+        ...d.progress,
+        mastered,
+        learning,
+        notStarted,
+        completionPercentage: d.cardCount > 0 ? Math.round((mastered / d.cardCount) * 100) : 0,
+        dueCount: getDueCount(cards),
+      },
+    };
+  });
+  return { decks: updated };
 }
 
 export async function mockGetDeck(deckId: string): Promise<{ deck: Deck }> {
@@ -139,19 +159,15 @@ export async function mockCreateDeck(data: CreateDeckRequest): Promise<CreateDec
   const decks = await getDecks();
   const allFlashcards = await getFlashcards();
 
-  // Duplicate title check
   if (decks.some((d) => d.title.toLowerCase() === data.title.toLowerCase())) {
     throw new MockError('Já existe um deck com esse título.', 409);
   }
 
   const deckId = `deck-${generateId()}`;
   const numberOfCards = Math.min(Math.max(data.numberOfCards ?? 10, 5), 30);
-
-  // Select template based on prompt keyword matching
   const topic = matchPromptToTemplate(data.prompt);
   const templates = FLASHCARD_TEMPLATES[topic];
 
-  // Build flashcards from template (repeat if necessary to reach numberOfCards)
   const flashcards: FlashCard[] = [];
   for (let i = 0; i < numberOfCards; i++) {
     const tpl = templates[i % templates.length];
@@ -163,6 +179,7 @@ export async function mockCreateDeck(data: CreateDeckRequest): Promise<CreateDec
       order: i + 1,
       createdAt: new Date().toISOString(),
       stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+      srs: getInitialSRS(),
     });
   }
 
@@ -181,6 +198,7 @@ export async function mockCreateDeck(data: CreateDeckRequest): Promise<CreateDec
       learning: 0,
       notStarted: flashcards.length,
       completionPercentage: 0,
+      dueCount: flashcards.length,
     },
   };
 
@@ -217,12 +235,13 @@ export async function mockCreateManualDeck(
     order: i + 1,
     createdAt: new Date().toISOString(),
     stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+    srs: getInitialSRS(),
   }));
 
   const deck: Deck = {
     id: deckId,
     title,
-    description,
+    description: description ?? '',
     coverEmoji: emoji,
     cardCount: flashcards.length,
     createdAt: new Date().toISOString(),
@@ -234,6 +253,7 @@ export async function mockCreateManualDeck(
       learning: 0,
       notStarted: flashcards.length,
       completionPercentage: 0,
+      dueCount: flashcards.length,
     },
   };
 
@@ -243,47 +263,21 @@ export async function mockCreateManualDeck(
   return { deck, flashcards };
 }
 
-export async function mockCreateFlashcard(
+export async function mockUpdateDeck(
   deckId: string,
-  question: string,
-  answer: string,
-  questionImage?: string,
-  answerImage?: string
-): Promise<{ flashcard: FlashCard }> {
+  patch: { title: string; description: string; coverEmoji: string }
+): Promise<{ deck: Deck }> {
   await simulateDelay(150, 300);
-
-  const allFlashcards = await getFlashcards();
-  const cards = allFlashcards[deckId] ?? [];
-
-  const newCard: FlashCard = {
-    id: `fc-${deckId}-${generateId()}`,
-    deckId,
-    question,
-    answer,
-    questionImage,
-    answerImage,
-    order: cards.length + 1,
-    createdAt: new Date().toISOString(),
-    stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
-  };
-
-  allFlashcards[deckId] = [...cards, newCard];
-  await saveFlashcards(allFlashcards);
-
-  // Update deck cardCount in storage
   const decks = await getDecks();
-  const deck = decks.find((d) => d.id === deckId);
-  if (deck) {
-    deck.cardCount += 1;
-    deck.updatedAt = new Date().toISOString();
-    if (deck.progress) {
-      deck.progress.totalCards += 1;
-      deck.progress.notStarted += 1;
-    }
-    await saveDecks(decks);
+  const idx = decks.findIndex((d) => d.id === deckId);
+  if (idx === -1) throw new MockError('Deck não encontrado.', 404);
+  // Duplicate title check (exclude self)
+  if (decks.some((d) => d.id !== deckId && d.title.toLowerCase() === patch.title.toLowerCase())) {
+    throw new MockError('Já existe um deck com esse título.', 409);
   }
-
-  return { flashcard: newCard };
+  decks[idx] = { ...decks[idx], ...patch, updatedAt: new Date().toISOString() };
+  await saveDecks(decks);
+  return { deck: decks[idx] };
 }
 
 export async function mockDeleteDeck(deckId: string): Promise<{ message: string }> {
@@ -309,6 +303,50 @@ export async function mockGetFlashcards(deckId: string): Promise<{ flashcards: F
   return { flashcards };
 }
 
+export async function mockCreateFlashcard(
+  deckId: string,
+  question: string,
+  answer: string,
+  questionImage?: string,
+  answerImage?: string
+): Promise<{ flashcard: FlashCard }> {
+  await simulateDelay(150, 300);
+
+  const allFlashcards = await getFlashcards();
+  const cards = allFlashcards[deckId] ?? [];
+
+  const newCard: FlashCard = {
+    id: `fc-${deckId}-${generateId()}`,
+    deckId,
+    question,
+    answer,
+    questionImage,
+    answerImage,
+    order: cards.length + 1,
+    createdAt: new Date().toISOString(),
+    stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+    srs: getInitialSRS(),
+  };
+
+  allFlashcards[deckId] = [...cards, newCard];
+  await saveFlashcards(allFlashcards);
+
+  const decks = await getDecks();
+  const deck = decks.find((d) => d.id === deckId);
+  if (deck) {
+    deck.cardCount += 1;
+    deck.updatedAt = new Date().toISOString();
+    if (deck.progress) {
+      deck.progress.totalCards += 1;
+      deck.progress.notStarted += 1;
+      deck.progress.dueCount = getDueCount(allFlashcards[deckId]);
+    }
+    await saveDecks(decks);
+  }
+
+  return { flashcard: newCard };
+}
+
 export async function mockUpdateFlashcard(
   deckId: string,
   flashcardId: string,
@@ -323,6 +361,52 @@ export async function mockUpdateFlashcard(
   const idx = cards.findIndex((c) => c.id === flashcardId);
   if (idx === -1) throw new MockError('Flashcard não encontrado.', 404);
   cards[idx] = { ...cards[idx], question, answer, questionImage, answerImage };
+  allFlashcards[deckId] = cards;
+  await saveFlashcards(allFlashcards);
+  return { flashcard: cards[idx] };
+}
+
+export async function mockDeleteFlashcard(
+  deckId: string,
+  flashcardId: string
+): Promise<{ message: string }> {
+  await simulateDelay(150, 300);
+  const allFlashcards = await getFlashcards();
+  const cards = allFlashcards[deckId] ?? [];
+  const updated = cards.filter((c) => c.id !== flashcardId);
+  if (updated.length === cards.length) throw new MockError('Flashcard não encontrado.', 404);
+  allFlashcards[deckId] = updated;
+  await saveFlashcards(allFlashcards);
+
+  const decks = await getDecks();
+  const deck = decks.find((d) => d.id === deckId);
+  if (deck) {
+    deck.cardCount = Math.max(0, deck.cardCount - 1);
+    deck.updatedAt = new Date().toISOString();
+    if (deck.progress) {
+      deck.progress.totalCards = deck.cardCount;
+      deck.progress.dueCount = getDueCount(updated);
+    }
+    await saveDecks(decks);
+  }
+
+  return { message: 'Flashcard deletado com sucesso.' };
+}
+
+export async function mockResetFlashcardSRS(
+  deckId: string,
+  flashcardId: string
+): Promise<{ flashcard: FlashCard }> {
+  await simulateDelay(100, 200);
+  const allFlashcards = await getFlashcards();
+  const cards = allFlashcards[deckId] ?? [];
+  const idx = cards.findIndex((c) => c.id === flashcardId);
+  if (idx === -1) throw new MockError('Flashcard não encontrado.', 404);
+  cards[idx] = {
+    ...cards[idx],
+    srs: getInitialSRS(),
+    stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 },
+  };
   allFlashcards[deckId] = cards;
   await saveFlashcards(allFlashcards);
   return { flashcard: cards[idx] };
@@ -346,7 +430,7 @@ export async function mockStartStudySession(deckId: string): Promise<{ session: 
 export async function mockAnswerCard(
   sessionId: string,
   payload: { flashcardId: string; result: StudyResult; timeSpentMs: number }
-): Promise<{ updated: boolean }> {
+): Promise<{ updated: boolean; nextSRS: ReturnType<typeof calculateNextSRS> }> {
   await simulateDelay(100, 300);
   const sessions = await getSessions();
   const session = sessions[sessionId];
@@ -361,12 +445,15 @@ export async function mockAnswerCard(
   session.results.push(cardResult);
   await saveSessions({ ...sessions, [sessionId]: session });
 
-  // Update flashcard stats
+  // Update flashcard stats + SRS
   const allFlashcards = await getFlashcards();
   const deckCards = allFlashcards[session.deckId];
+  let nextSRS = getInitialSRS();
   if (deckCards) {
     const card = deckCards.find((c) => c.id === payload.flashcardId);
     if (card) {
+      nextSRS = calculateNextSRS(card.srs ?? getInitialSRS(), payload.result);
+      card.srs = nextSRS;
       card.stats.timesStudied += 1;
       card.stats.lastResult = payload.result;
       card.stats.lastStudiedAt = new Date().toISOString();
@@ -377,7 +464,7 @@ export async function mockAnswerCard(
     }
   }
 
-  return { updated: true };
+  return { updated: true, nextSRS };
 }
 
 export async function mockCompleteSession(
@@ -391,7 +478,6 @@ export async function mockCompleteSession(
   session.completedAt = new Date().toISOString();
   await saveSessions({ ...sessions, [sessionId]: session });
 
-  // Update deck progress and lastStudiedAt
   const results = session.results;
   const correct = results.filter((r) => r.result === 'correct').length;
   const wrong = results.filter((r) => r.result === 'wrong').length;
@@ -399,17 +485,24 @@ export async function mockCompleteSession(
   const totalTimeMs = results.reduce((acc, r) => acc + r.timeSpentMs, 0);
   const total = results.length;
 
-  // Update deck progress in storage
+  const allFlashcards = await getFlashcards();
+  const deckCards = allFlashcards[session.deckId] ?? [];
+
   const decks = await getDecks();
   const deck = decks.find((d) => d.id === session.deckId);
   if (deck) {
     deck.lastStudiedAt = new Date().toISOString();
+    // Derive mastery from SRS data, not session counts
+    const mastered = deckCards.filter((c) => (c.srs?.interval ?? 0) >= 7).length;
+    const notStarted = deckCards.filter((c) => c.stats.timesStudied === 0).length;
+    const learning = Math.max(0, deck.cardCount - mastered - notStarted);
     deck.progress = {
       totalCards: deck.cardCount,
-      mastered: correct,
-      learning: wrong + doubt,
-      notStarted: Math.max(0, deck.cardCount - total),
-      completionPercentage: deck.cardCount > 0 ? Math.round((correct / deck.cardCount) * 100) : 0,
+      mastered,
+      learning,
+      notStarted,
+      completionPercentage: deck.cardCount > 0 ? Math.round((mastered / deck.cardCount) * 100) : 0,
+      dueCount: getDueCount(deckCards),
     };
     await saveDecks(decks);
   }

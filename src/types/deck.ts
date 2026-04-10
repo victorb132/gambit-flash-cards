@@ -10,6 +10,8 @@ export interface DeckProgress {
   notStarted: number;
   /** 0–100 */
   completionPercentage: number;
+  /** Cards due for review today (SRS) */
+  dueCount: number;
 }
 
 export interface Deck {

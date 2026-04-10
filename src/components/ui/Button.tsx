@@ -1,5 +1,5 @@
-import React from 'react';
-import { TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Theme } from '../../theme';
 import Box from './Box';
@@ -29,7 +29,7 @@ const variantConfig: Record<
   ghost: { bg: 'transparent', textColor: 'primaryDark' },
 };
 
-/** Reusable themed button with loading and disabled states */
+/** Reusable themed button — compact futuristic style */
 const Button = React.memo(function Button({
   label,
   onPress,
@@ -42,38 +42,62 @@ const Button = React.memo(function Button({
   const theme = useTheme<Theme>();
   const config = variantConfig[variant];
   const isDisabled = disabled || isLoading;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  function handlePressIn() {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  }
+
+  function handlePressOut() {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 2,
+    }).start();
+  }
 
   return (
     <TouchableOpacity
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
-      style={{ width: fullWidth ? '100%' : undefined, opacity: isDisabled ? 0.6 : 1 }}
+      style={{ width: fullWidth ? '100%' : undefined, opacity: isDisabled ? 0.45 : 1 }}
+      activeOpacity={1}
     >
-      <Box
-        backgroundColor={config.bg}
-        paddingVertical="m"
-        paddingHorizontal="l"
-        borderRadius="m"
-        alignItems="center"
-        justifyContent="center"
-        flexDirection="row"
-        style={
-          variant === 'ghost'
-            ? { borderWidth: 2, borderColor: theme.colors.primaryDark }
-            : undefined
-        }
-      >
-        {isLoading ? (
-          <ActivityIndicator color={theme.colors[config.textColor]} size="small" />
-        ) : (
-          <Text variant="button" color={config.textColor}>
-            {label}
-          </Text>
-        )}
-      </Box>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Box
+          backgroundColor={config.bg}
+          paddingVertical="s"
+          paddingHorizontal="l"
+          borderRadius="s"
+          alignItems="center"
+          justifyContent="center"
+          flexDirection="row"
+          style={
+            variant === 'ghost'
+              ? { borderWidth: 1, borderColor: theme.colors.primaryDark }
+              : undefined
+          }
+        >
+          {isLoading ? (
+            <ActivityIndicator color={theme.colors[config.textColor]} size="small" />
+          ) : (
+            <Text variant="button" color={config.textColor}>
+              {label}
+            </Text>
+          )}
+        </Box>
+      </Animated.View>
     </TouchableOpacity>
   );
 });

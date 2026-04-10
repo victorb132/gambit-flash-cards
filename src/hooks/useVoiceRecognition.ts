@@ -43,6 +43,10 @@ function getSpeechModule(): SpeechModule | null {
   return requireOptionalNativeModule<SpeechModule>('ExpoSpeechRecognition');
 }
 
+export function isSpeechRecognitionAvailable(): boolean {
+  return getSpeechModule() !== null;
+}
+
 export function useVoiceRecognition(
   onCommand: (command: VoiceCommand) => void,
   enabled: boolean

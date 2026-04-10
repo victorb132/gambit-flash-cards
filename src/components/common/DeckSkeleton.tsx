@@ -26,35 +26,35 @@ const DeckSkeleton = React.memo(function DeckSkeleton() {
     <Animated.View style={{ opacity }}>
       <Box
         backgroundColor="white"
-        borderRadius="l"
+        borderRadius="m"
         padding="m"
-        marginBottom="m"
-        style={{ elevation: 2 }}
+        marginBottom="s"
+        style={{ borderWidth: 1, borderColor: skeletonColor }}
       >
         <Box flexDirection="row" alignItems="center" marginBottom="m">
           <Box
-            width={48}
-            height={48}
-            borderRadius="m"
+            width={40}
+            height={40}
+            borderRadius="s"
             style={{ backgroundColor: skeletonColor }}
           />
           <Box marginLeft="m" flex={1}>
             <Box
-              height={16}
+              height={13}
               borderRadius="s"
               width="60%"
               marginBottom="s"
               style={{ backgroundColor: skeletonColor }}
             />
             <Box
-              height={12}
+              height={10}
               borderRadius="s"
               width="40%"
               style={{ backgroundColor: skeletonColor }}
             />
           </Box>
         </Box>
-        <Box height={8} borderRadius="round" style={{ backgroundColor: skeletonColor }} />
+        <Box height={3} borderRadius="round" style={{ backgroundColor: skeletonColor }} />
       </Box>
     </Animated.View>
   );

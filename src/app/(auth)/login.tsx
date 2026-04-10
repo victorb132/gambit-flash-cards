@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,11 +9,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { Theme } from '../../theme';
 
 const FLOATING_ICONS = [
-  { Icon: Books, top: '6%',  left: '6%',   size: 34, opacity: 0.18, rotate: '-15deg' },
-  { Icon: Globe, top: '4%',  right: '10%', size: 26, opacity: 0.14, rotate: '12deg'  },
-  { Icon: Atom,  top: '16%', left: '24%',  size: 20, opacity: 0.12, rotate: '0deg'   },
-  { Icon: Brain, top: '12%', right: '26%', size: 30, opacity: 0.16, rotate: '-8deg'  },
-  { Icon: Flask, top: '24%', left: '4%',   size: 24, opacity: 0.13, rotate: '20deg'  },
+  { Icon: Books, top: '6%',  left: '6%',   size: 32, opacity: 0.10, rotate: '-15deg', speed: 2400 },
+  { Icon: Globe, top: '4%',  right: '10%', size: 24, opacity: 0.08, rotate: '12deg',  speed: 3100 },
+  { Icon: Atom,  top: '18%', left: '24%',  size: 18, opacity: 0.07, rotate: '0deg',   speed: 2700 },
+  { Icon: Brain, top: '14%', right: '26%', size: 28, opacity: 0.09, rotate: '-8deg',  speed: 2200 },
+  { Icon: Flask, top: '26%', left: '4%',   size: 22, opacity: 0.08, rotate: '20deg',  speed: 3400 },
 ];
 
 export default function LoginScreen() {
@@ -23,19 +23,41 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const floatAnims = useRef(FLOATING_ICONS.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    floatAnims.forEach((anim, i) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: FLOATING_ICONS[i].speed,
+            delay: i * 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: FLOATING_ICONS[i].speed,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
+  }, []);
+
   async function handleLogin() {
     const success = await login(email, password);
     if (success) router.replace('/(main)/decks');
   }
 
   const inputStyle = {
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    height: 46,
+    borderRadius: 6,
+    borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surfaceLight,
     paddingHorizontal: 16,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     color: theme.colors.textPrimary,
   };
@@ -45,35 +67,49 @@ export default function LoginScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.container, { backgroundColor: theme.colors.primaryDark }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+        {/* Top strip */}
+        <View style={[styles.topStrip, { backgroundColor: theme.colors.primaryDark }]} />
+
         <View style={[styles.upperSection, { paddingTop: insets.top + 16 }]}>
-          {FLOATING_ICONS.map(({ Icon, top, left, right, size, opacity, rotate }, i) => (
-            <View
-              key={i}
-              style={[
-                styles.floatingIcon,
-                { top: top as any, left: left as any, right: right as any,
-                  opacity, transform: [{ rotate }] },
-              ]}
-            >
-              <Icon size={size} color={theme.colors.surfaceLight} weight="fill" />
-            </View>
-          ))}
+          {FLOATING_ICONS.map(({ Icon, top, left, right, size, opacity, rotate }, i) => {
+            const translateY = floatAnims[i].interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -10],
+            });
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.floatingIcon,
+                  {
+                    top: top as any,
+                    left: left as any,
+                    right: right as any,
+                    opacity,
+                    transform: [{ rotate }, { translateY }],
+                  },
+                ]}
+              >
+                <Icon size={size} color={theme.colors.primaryDark} weight="thin" />
+              </Animated.View>
+            );
+          })}
 
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ArrowLeft size={22} color={theme.colors.surfaceLight} weight="bold" />
+            <ArrowLeft size={20} color={theme.colors.textPrimary} weight="bold" />
           </TouchableOpacity>
 
           <View style={styles.upperContent}>
-            <Text style={{ fontSize: 28, fontFamily: 'Poppins_700Bold', color: theme.colors.surfaceLight }}>
-              Bem-vindo de volta
+            <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: theme.colors.textSecondary, letterSpacing: 2.5 }}>
+              BEM-VINDO DE VOLTA
             </Text>
-            <Text style={{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: theme.colors.surface, marginTop: 6, opacity: 0.85 }}>
-              Entre para continuar estudando
+            <Text style={{ fontSize: 26, fontFamily: 'Poppins_700Bold', color: theme.colors.textPrimary, letterSpacing: -0.5, marginTop: 4 }}>
+              Entrar
             </Text>
           </View>
         </View>
@@ -88,6 +124,7 @@ export default function LoginScreen() {
               styles.card,
               {
                 backgroundColor: theme.colors.surfaceLight,
+                borderTopColor: theme.colors.border,
                 paddingBottom: insets.bottom + 32,
               },
             ]}
@@ -96,10 +133,10 @@ export default function LoginScreen() {
               <Text style={labelStyle(theme)}>E-mail</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconLeft}>
-                  <Envelope size={18} color={theme.colors.textSecondary} />
+                  <Envelope size={16} color={theme.colors.textSecondary} />
                 </View>
                 <TextInput
-                  style={[inputStyle, { paddingLeft: 44 }]}
+                  style={[inputStyle, { paddingLeft: 40 }]}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="seu@email.com"
@@ -117,10 +154,10 @@ export default function LoginScreen() {
               <Text style={labelStyle(theme)}>Senha</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconLeft}>
-                  <Lock size={18} color={theme.colors.textSecondary} />
+                  <Lock size={16} color={theme.colors.textSecondary} />
                 </View>
                 <TextInput
-                  style={[inputStyle, { paddingLeft: 44 }]}
+                  style={[inputStyle, { paddingLeft: 40 }]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Mínimo 6 caracteres"
@@ -134,8 +171,8 @@ export default function LoginScreen() {
             </View>
 
             {errors.general && (
-              <View style={[styles.errorBox, { backgroundColor: theme.colors.error }]}>
-                <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: theme.colors.white, textAlign: 'center' }}>
+              <View style={[styles.errorBox, { backgroundColor: theme.colors.error + '18', borderColor: theme.colors.error, borderWidth: 1 }]}>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: theme.colors.error, textAlign: 'center' }}>
                   {errors.general}
                 </Text>
               </View>
@@ -144,18 +181,18 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                { backgroundColor: isSubmitting ? theme.colors.primary : theme.colors.primaryDark },
+                { backgroundColor: theme.colors.primaryDark },
               ]}
               onPress={handleLogin}
               disabled={isSubmitting}
-              activeOpacity={0.85}
+              activeOpacity={0.82}
             >
-              <Text style={{ fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: theme.colors.surfaceLight }}>
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: theme.colors.surfaceLight, letterSpacing: 0.4 }}>
                 {isSubmitting ? 'Entrando...' : 'Entrar'}
               </Text>
             </TouchableOpacity>
 
-            <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: theme.colors.textSecondary, textAlign: 'center', marginTop: 20, opacity: 0.7 }}>
+            <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: theme.colors.textSecondary, textAlign: 'center', marginTop: 20, letterSpacing: 0.2 }}>
               Demo: usuario@gambit.com / 123456
             </Text>
           </View>
@@ -167,8 +204,16 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  topStrip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    zIndex: 10,
+  },
   upperSection: {
-    height: 210,
+    height: 200,
     paddingHorizontal: 24,
     justifyContent: 'flex-end',
     paddingBottom: 28,
@@ -183,29 +228,28 @@ const styles = StyleSheet.create({
   upperContent: { marginTop: 8 },
   card: {
     flex: 1,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 32,
+    borderTopWidth: 1,
+    paddingTop: 28,
     paddingHorizontal: 24,
   },
-  fieldGroup: { marginBottom: 20 },
+  fieldGroup: { marginBottom: 18 },
   inputWrapper: { position: 'relative' },
   iconLeft: {
     position: 'absolute',
-    left: 14,
+    left: 12,
     top: 0,
     bottom: 0,
     justifyContent: 'center',
     zIndex: 1,
   },
   errorBox: {
-    borderRadius: 10,
+    borderRadius: 6,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   submitButton: {
-    height: 54,
-    borderRadius: 14,
+    height: 44,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
@@ -214,16 +258,18 @@ const styles = StyleSheet.create({
 
 function labelStyle(theme: Theme) {
   return {
-    fontSize: 13,
+    fontSize: 11,
     fontFamily: 'Poppins_500Medium',
-    color: theme.colors.textPrimary,
-    marginBottom: 8,
+    color: theme.colors.textSecondary,
+    marginBottom: 7,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase' as const,
   };
 }
 
 function errorTextStyle(theme: Theme) {
   return {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Poppins_400Regular',
     color: theme.colors.error,
     marginTop: 4,

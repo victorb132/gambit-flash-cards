@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Deck } from '../types/deck';
 import { FlashCard } from '../types/flashcard';
 import { StudySessionSummary } from '../types/study';
+import { SRSData, getDueCount } from '../utils/srs';
 
 interface DeckState {
   decks: Deck[];
@@ -11,16 +12,16 @@ interface DeckState {
   setDecks: (decks: Deck[]) => void;
   addDeck: (deck: Deck) => void;
   removeDeck: (deckId: string) => void;
+  updateDeck: (deckId: string, patch: { title: string; description: string; coverEmoji: string }) => void;
   setFlashcards: (deckId: string, flashcards: FlashCard[]) => void;
   addFlashcard: (deckId: string, card: FlashCard) => void;
+  removeFlashcard: (deckId: string, flashcardId: string) => void;
   setLoadingDecks: (loading: boolean) => void;
   setLoadingFlashcards: (loading: boolean) => void;
   updateFlashcard: (deckId: string, flashcardId: string, question: string, answer: string, questionImage?: string, answerImage?: string) => void;
-  updateFlashcardStats: (
-    deckId: string,
-    flashcardId: string,
-    result: 'correct' | 'wrong' | 'doubt'
-  ) => void;
+  updateFlashcardStats: (deckId: string, flashcardId: string, result: 'correct' | 'wrong' | 'doubt', nextSRS: SRSData) => void;
+  restoreFlashcard: (deckId: string, card: FlashCard) => void;
+  resetFlashcardSRS: (deckId: string, flashcardId: string) => void;
   updateDeckProgress: (deckId: string, summary: StudySessionSummary) => void;
 }
 
@@ -32,6 +33,7 @@ export const useDeckStore = create<DeckState>((set) => ({
 
   setDecks: (decks) => set({ decks }),
   addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck] })),
+
   removeDeck: (deckId) =>
     set((state) => ({
       decks: state.decks.filter((d) => d.id !== deckId),
@@ -40,14 +42,27 @@ export const useDeckStore = create<DeckState>((set) => ({
       ),
     })),
 
+  updateDeck: (deckId, patch) =>
+    set((state) => ({
+      decks: state.decks.map((d) =>
+        d.id === deckId ? { ...d, ...patch, updatedAt: new Date().toISOString() } : d
+      ),
+    })),
+
   setFlashcards: (deckId, flashcards) =>
     set((state) => ({
       flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: flashcards },
+      decks: state.decks.map((d) => {
+        if (d.id !== deckId) return d;
+        const dueCount = getDueCount(flashcards);
+        return { ...d, progress: { ...d.progress, dueCount } };
+      }),
     })),
 
   addFlashcard: (deckId, card) =>
     set((state) => {
       const existing = state.flashcardsByDeck[deckId] ?? [];
+      const updated = [...existing, card];
       const decks = state.decks.map((d) => {
         if (d.id !== deckId) return d;
         const newCount = d.cardCount + 1;
@@ -55,14 +70,38 @@ export const useDeckStore = create<DeckState>((set) => ({
           ...d,
           cardCount: newCount,
           progress: d.progress
-            ? { ...d.progress, totalCards: newCount, notStarted: d.progress.notStarted + 1 }
+            ? {
+                ...d.progress,
+                totalCards: newCount,
+                notStarted: d.progress.notStarted + 1,
+                dueCount: getDueCount(updated),
+              }
             : d.progress,
         };
       });
-      return {
-        decks,
-        flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: [...existing, card] },
-      };
+      return { decks, flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
+    }),
+
+  removeFlashcard: (deckId, flashcardId) =>
+    set((state) => {
+      const existing = state.flashcardsByDeck[deckId] ?? [];
+      const updated = existing.filter((c) => c.id !== flashcardId);
+      const decks = state.decks.map((d) => {
+        if (d.id !== deckId) return d;
+        const newCount = Math.max(0, d.cardCount - 1);
+        return {
+          ...d,
+          cardCount: newCount,
+          progress: d.progress
+            ? {
+                ...d.progress,
+                totalCards: newCount,
+                dueCount: getDueCount(updated),
+              }
+            : d.progress,
+        };
+      });
+      return { decks, flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
     }),
 
   setLoadingDecks: (isLoadingDecks) => set({ isLoadingDecks }),
@@ -78,7 +117,7 @@ export const useDeckStore = create<DeckState>((set) => ({
       return { flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
     }),
 
-  updateFlashcardStats: (deckId, flashcardId, result) =>
+  updateFlashcardStats: (deckId, flashcardId, result, nextSRS) =>
     set((state) => {
       const cards = state.flashcardsByDeck[deckId];
       if (!cards) return state;
@@ -86,6 +125,7 @@ export const useDeckStore = create<DeckState>((set) => ({
         if (c.id !== flashcardId) return c;
         return {
           ...c,
+          srs: nextSRS,
           stats: {
             ...c.stats,
             timesStudied: c.stats.timesStudied + 1,
@@ -100,23 +140,61 @@ export const useDeckStore = create<DeckState>((set) => ({
       return { flashcardsByDeck: { ...state.flashcardsByDeck, [deckId]: updated } };
     }),
 
-  updateDeckProgress: (deckId, summary) =>
-    set((state) => ({
-      decks: state.decks.map((d) => {
-        if (d.id !== deckId) return d;
-        const totalCards = d.cardCount;
-        return {
-          ...d,
-          lastStudiedAt: new Date().toISOString(),
-          progress: {
-            totalCards,
-            mastered: summary.correct,
-            learning: summary.wrong + summary.doubt,
-            notStarted: Math.max(0, totalCards - summary.totalCards),
-            completionPercentage:
-              totalCards > 0 ? Math.round((summary.correct / totalCards) * 100) : 0,
-          },
-        };
-      }),
-    })),
+  restoreFlashcard: (deckId, card) =>
+    set((state) => {
+      const cards = state.flashcardsByDeck[deckId];
+      if (!cards) return state;
+      return {
+        flashcardsByDeck: {
+          ...state.flashcardsByDeck,
+          [deckId]: cards.map((c) => (c.id === card.id ? card : c)),
+        },
+      };
+    }),
+
+  resetFlashcardSRS: (deckId, flashcardId) =>
+    set((state) => {
+      const cards = state.flashcardsByDeck[deckId];
+      if (!cards) return state;
+      const due = new Date();
+      due.setHours(0, 0, 0, 0);
+      const initialSRS = { interval: 0, easeFactor: 2.5, repetitions: 0, dueDate: due.toISOString() };
+      return {
+        flashcardsByDeck: {
+          ...state.flashcardsByDeck,
+          [deckId]: cards.map((c) =>
+            c.id === flashcardId
+              ? { ...c, srs: initialSRS, stats: { timesStudied: 0, timesCorrect: 0, timesWrong: 0, timesDoubt: 0 } }
+              : c
+          ),
+        },
+      };
+    }),
+
+  updateDeckProgress: (deckId, _summary) =>
+    set((state) => {
+      const cards = state.flashcardsByDeck[deckId] ?? [];
+      return {
+        decks: state.decks.map((d) => {
+          if (d.id !== deckId) return d;
+          const totalCards = d.cardCount;
+          // Derive true mastery from SRS data, not session counts
+          const notStarted = cards.filter((c) => c.stats.timesStudied === 0).length;
+          const mastered = cards.filter((c) => (c.srs?.interval ?? 0) >= 7).length;
+          const learning = Math.max(0, totalCards - notStarted - mastered);
+          return {
+            ...d,
+            lastStudiedAt: new Date().toISOString(),
+            progress: {
+              totalCards,
+              mastered,
+              learning,
+              notStarted,
+              completionPercentage: totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0,
+              dueCount: getDueCount(cards),
+            },
+          };
+        }),
+      };
+    }),
 }));

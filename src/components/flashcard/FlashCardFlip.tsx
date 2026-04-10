@@ -23,7 +23,7 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
   useEffect(() => {
     Animated.timing(rotation, {
       toValue: isFlipped ? 180 : 0,
-      duration: 400,
+      duration: 360,
       useNativeDriver: true,
     }).start();
   }, [isFlipped, rotation]);
@@ -58,37 +58,47 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
     Platform.OS === 'ios'
       ? {
           shadowColor: theme.colors.shadow,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.18,
+          shadowRadius: 20,
         }
-      : { elevation: 6 };
+      : { elevation: 8 };
 
   function CardFace({
     text,
     label,
     bgColor,
+    borderColor,
+    labelColor,
+    textColor,
     image,
   }: {
     text: string;
     label: string;
     bgColor: string;
+    borderColor: string;
+    labelColor: string;
+    textColor: string;
     image?: string;
   }) {
     return (
       <Box
         flex={1}
-        borderRadius="xl"
+        borderRadius="l"
         padding="xl"
         alignItems="center"
         justifyContent="center"
-        style={[{ backgroundColor: bgColor }, cardShadow]}
+        style={[{ backgroundColor: bgColor, borderWidth: 1, borderColor }, cardShadow]}
       >
         <Text
-          variant="caption"
-          color="textSecondary"
-          marginBottom="m"
-          style={{ textTransform: 'uppercase', letterSpacing: 2 }}
+          style={{
+            fontSize: 9,
+            fontFamily: 'Poppins_600SemiBold',
+            color: labelColor,
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            marginBottom: 20,
+          }}
         >
           {label}
         </Text>
@@ -97,14 +107,23 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
             source={{ uri: image }}
             style={{
               width: '100%',
-              height: 160,
-              borderRadius: 10,
+              height: 150,
+              borderRadius: 6,
               marginBottom: 16,
             }}
             resizeMode="contain"
           />
         )}
-        <Text variant="h2" textAlign="center" color="textPrimary" style={{ lineHeight: 36 }}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontFamily: 'Poppins_600SemiBold',
+            color: textColor,
+            textAlign: 'center',
+            lineHeight: 30,
+            letterSpacing: -0.2,
+          }}
+        >
           {text}
         </Text>
       </Box>
@@ -121,10 +140,26 @@ const FlashCardFlip = React.memo(function FlashCardFlip({
     >
       <Box flex={1} style={{ position: 'relative' }}>
         <Animated.View style={frontStyle}>
-          <CardFace text={card.question} label="Pergunta" bgColor={theme.colors.white} image={card.questionImage} />
+          <CardFace
+            text={card.question}
+            label="Pergunta"
+            bgColor={theme.colors.surfaceLight}
+            borderColor={theme.colors.border}
+            labelColor={theme.colors.textSecondary}
+            textColor={theme.colors.textPrimary}
+            image={card.questionImage}
+          />
         </Animated.View>
         <Animated.View style={backStyle}>
-          <CardFace text={card.answer} label="Resposta" bgColor={theme.colors.surfaceLight} image={card.answerImage} />
+          <CardFace
+            text={card.answer}
+            label="Resposta"
+            bgColor={theme.colors.primaryDark}
+            borderColor={theme.colors.primaryDark}
+            labelColor="#888888"
+            textColor={theme.colors.surfaceLight}
+            image={card.answerImage}
+          />
         </Animated.View>
       </Box>
     </TouchableOpacity>

@@ -33,7 +33,7 @@ const Input = React.memo(function Input({
       )}
       <Box
         backgroundColor="surfaceLight"
-        borderRadius="m"
+        borderRadius="s"
         borderWidth={1}
         borderColor={error ? 'error' : 'border'}
         flexDirection="row"
@@ -46,9 +46,9 @@ const Input = React.memo(function Input({
           secureTextEntry={isPassword && !showPassword}
           style={{
             flex: 1,
-            paddingVertical: theme.spacing.m,
+            paddingVertical: 12,
             fontFamily: 'Poppins_400Regular',
-            fontSize: 16,
+            fontSize: 14,
             color: theme.colors.textPrimary,
           }}
           placeholderTextColor={theme.colors.textSecondary}

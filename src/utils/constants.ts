@@ -10,6 +10,10 @@ export const STORAGE_KEYS = {
   MOCK_DECKS: '@gambit:mock_decks',
   MOCK_FLASHCARDS: '@gambit:mock_flashcards',
   MOCK_SESSIONS: '@gambit:mock_sessions',
+  STATS: '@gambit:stats',
+  NOTIFICATION_HOUR: '@gambit:notif_hour',
+  NOTIFICATION_MINUTE: '@gambit:notif_minute',
+  NOTIFICATION_ENABLED: '@gambit:notif_enabled',
 } as const;
 
 export const MOCK_CREDENTIALS = {
@@ -29,3 +33,5 @@ export const VOICE_COMMANDS = {
   WRONG: ['errei', 'errado', 'não sei', 'não sabia', 'incorreto'],
   DOUBT: ['dúvida', 'mais ou menos', 'talvez', 'não tenho certeza'],
 } as const;
+
+export const SRS_SWIPE_THRESHOLD = 80; // px
