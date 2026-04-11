@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
-import * as Speech from 'expo-speech';
+import { useState, useCallback, useRef } from "react";
+import * as Speech from "expo-speech";
+import { Platform } from "react-native";
 
 export function useTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -11,9 +12,13 @@ export function useTTS() {
     setIsSpeaking(true);
 
     Speech.speak(text, {
-      language: 'pt-BR',
+      language: "pt-BR",
       rate: 0.9,
       pitch: 1.0,
+      voice:
+        Platform.OS === "ios"
+          ? "com.apple.voice.super-compact.pt-BR.Luciana"
+          : "pt-br-x-pte-network",
       onDone: () => {
         setIsSpeaking(false);
         const cb = doneCallbackRef.current;
