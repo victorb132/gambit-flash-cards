@@ -41,21 +41,72 @@ export default function VoiceChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [textValue, setTextValue] = useState('');
 
-  // Auto-scroll to latest message
+  // ── Continuous conversation mode ──────────────────────────────────────────
+  // continuousRef controls whether the mic auto-restarts after each TTS ends.
+  const continuousRef = useRef(false);
+
+  // Track previous isSpeaking to detect the exact moment TTS finishes.
+  const prevIsSpeakingRef = useRef(false);
+  // Stable ref for current isSpeaking value (used inside setTimeout callbacks).
+  const isSpeakingRef = useRef(isSpeaking);
+  isSpeakingRef.current = isSpeaking;
+
+  const voiceStatusRef = useRef(voiceStatus);
+  voiceStatusRef.current = voiceStatus;
+
+  // When TTS stops and continuous mode is on → restart recording after a short
+  // pause (lets TTS audio fade out so the mic doesn't pick it up).
+  useEffect(() => {
+    const wasSpeaking = prevIsSpeakingRef.current;
+    prevIsSpeakingRef.current = isSpeaking;
+
+    if (!wasSpeaking || isSpeaking) return; // only act on true → false transition
+    if (!continuousRef.current) return;
+    if (state.isProcessing || state.showTextInput) return;
+
+    const t = setTimeout(() => {
+      if (
+        continuousRef.current &&
+        !isSpeakingRef.current &&
+        voiceStatusRef.current === 'idle'
+      ) {
+        startRecording();
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [isSpeaking]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Stop everything when screen unmounts ─────────────────────────────────
+  useEffect(() => {
+    return () => {
+      continuousRef.current = false;
+      stopTTS();
+      stopRecording();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-scroll to latest message ────────────────────────────────────────
   useEffect(() => {
     if (state.messages.length > 0) {
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [state.messages.length]);
 
+  // ── Mic button: tap to start continuous conversation, tap again to stop ──
   function handleMicPress() {
-    if (voiceStatus === 'recording') {
+    if (continuousRef.current) {
+      // End the conversation
+      continuousRef.current = false;
       stopRecording();
-    } else if (voiceStatus === 'idle' && !state.isProcessing) {
+      stopTTS();
+    } else {
+      // Begin continuous conversation
+      continuousRef.current = true;
       startRecording();
     }
   }
 
+  // ── Text input ────────────────────────────────────────────────────────────
   function handleTextSubmit() {
     const text = textValue.trim();
     if (!text) return;
@@ -67,8 +118,26 @@ export default function VoiceChatScreen() {
     handleUserInput(option);
   }
 
-  const isInputDisabled =
-    state.isProcessing || voiceStatus === 'recording' || voiceStatus === 'processing';
+  // VoiceStatus only has 'idle' | 'recording' now.
+  // We merge state.isProcessing into the status shown to MicButton so the
+  // spinner appears during API calls / state-machine processing.
+  const effectiveStatus: 'idle' | 'recording' | 'processing' =
+    state.isProcessing ? 'processing' : voiceStatus;
+
+  // Text input is editable when the state machine isn't processing and we're
+  // not actively recording.
+  const isTextDisabled = state.isProcessing || voiceStatus === 'recording';
+
+  // Status label in the header
+  const statusLabel = isSpeaking
+    ? 'falando...'
+    : state.isProcessing
+    ? 'processando...'
+    : voiceStatus === 'recording'
+    ? 'ouvindo...'
+    : continuousRef.current
+    ? 'pronto para ouvir'
+    : 'pronto';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -81,7 +150,9 @@ export default function VoiceChatScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
+              continuousRef.current = false;
               stopTTS();
+              stopRecording();
               router.back();
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -93,21 +164,13 @@ export default function VoiceChatScreen() {
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Assistente Gambit</Text>
             <View style={styles.headerStatusRow}>
-              <View style={[styles.statusDot, isSpeaking && styles.statusDotActive]} />
-              <Text style={styles.headerSub}>
-                {isSpeaking
-                  ? 'falando...'
-                  : state.isProcessing
-                  ? 'processando...'
-                  : voiceStatus === 'recording'
-                  ? 'ouvindo...'
-                  : 'pronto'}
-              </Text>
+              <View style={[styles.statusDot, isSpeaking && styles.statusDotSpeaking, voiceStatus === 'recording' && styles.statusDotListening]} />
+              <Text style={styles.headerSub}>{statusLabel}</Text>
             </View>
           </View>
 
           <TouchableOpacity
-            onPress={stopTTS}
+            onPress={() => { stopTTS(); }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.headerBtn}
           >
@@ -131,6 +194,7 @@ export default function VoiceChatScreen() {
               <ActivityIndicator color={darkColors.textSecondary} />
             </View>
           )}
+
           {state.messages.map((msg) => (
             <ChatBubble key={msg.id} message={msg} />
           ))}
@@ -189,17 +253,24 @@ export default function VoiceChatScreen() {
                 onChangeText={setTextValue}
                 onSubmitEditing={handleTextSubmit}
                 returnKeyType="send"
-                editable={!isInputDisabled}
+                editable={!isTextDisabled}
                 autoFocus
               />
               <TouchableOpacity
                 onPress={handleTextSubmit}
-                disabled={!textValue.trim() || isInputDisabled}
-                style={[styles.sendBtn, (!textValue.trim() || isInputDisabled) && styles.sendBtnDisabled]}
+                disabled={!textValue.trim() || isTextDisabled}
+                style={[
+                  styles.sendBtn,
+                  (!textValue.trim() || isTextDisabled) && styles.sendBtnDisabled,
+                ]}
               >
                 <PaperPlaneRightIcon
                   size={18}
-                  color={!textValue.trim() || isInputDisabled ? darkColors.textSecondary : darkColors.surface}
+                  color={
+                    !textValue.trim() || isTextDisabled
+                      ? darkColors.textSecondary
+                      : darkColors.surface
+                  }
                   weight="fill"
                 />
               </TouchableOpacity>
@@ -210,9 +281,9 @@ export default function VoiceChatScreen() {
           <View style={styles.micRow}>
             <View style={styles.micSide} />
             <MicButton
-              status={voiceStatus}
+              status={effectiveStatus}
               onPress={handleMicPress}
-              disabled={isInputDisabled && voiceStatus === 'idle'}
+              disabled={false}
             />
             <View style={styles.micSide}>
               <TouchableOpacity
@@ -238,47 +309,27 @@ export default function VoiceChatScreen() {
 
 function getStateHint(chatState: string): string {
   switch (chatState) {
-    case 'GREETING':
-      return 'Aguardando...';
-    case 'AWAITING_MAIN_OPTION':
-      return 'O que você quer fazer?';
-    case 'CREATE_DECK__ASK_NAME':
-      return 'Diga o nome do novo deck';
-    case 'CREATE_DECK__ASK_SUBJECT':
-      return 'Diga o assunto dos flashcards';
-    case 'ADD_CARD__ASK_DECK':
-      return 'Diga o nome do deck';
-    case 'ADD_CARD__ASK_SUBJECT':
-      return 'Diga o assunto dos flashcards';
-    case 'LIST_DECKS':
-      return 'Diga qual deck quer estudar';
-    case 'DELETE_DECK__ASK_WHICH':
-      return 'Diga o nome do deck para excluir';
-    case 'DELETE_DECK__CONFIRM':
-      return 'Confirme: "sim" ou "não"';
-    case 'STUDY__ASK_DECK':
-      return 'Diga o nome do deck';
-    case 'STUDY__IN_PROGRESS':
-      return 'Responda a pergunta do flashcard';
-    case 'STUDY__SELF_EVALUATE':
-      return 'Acertou, errou ou teve dúvida?';
-    case 'STUDY__FINISHED':
-      return 'Sessão concluída';
-    case 'POST_ACTION__ASK_STUDY':
-      return 'Quer estudar agora? Diga "sim" ou "não"';
-    default:
-      return '';
+    case 'GREETING': return 'Aguardando...';
+    case 'AWAITING_MAIN_OPTION': return 'O que você quer fazer?';
+    case 'CREATE_DECK__ASK_NAME': return 'Diga o nome do novo deck';
+    case 'CREATE_DECK__ASK_SUBJECT': return 'Diga o assunto dos flashcards';
+    case 'ADD_CARD__ASK_DECK': return 'Diga o nome do deck';
+    case 'ADD_CARD__ASK_SUBJECT': return 'Diga o assunto dos flashcards';
+    case 'LIST_DECKS': return 'Diga qual deck quer estudar';
+    case 'DELETE_DECK__ASK_WHICH': return 'Diga o nome do deck para excluir';
+    case 'DELETE_DECK__CONFIRM': return 'Confirme: "sim" ou "não"';
+    case 'STUDY__ASK_DECK': return 'Diga o nome do deck';
+    case 'STUDY__IN_PROGRESS': return 'Responda a pergunta do flashcard';
+    case 'STUDY__SELF_EVALUATE': return 'Acertou, errou ou teve dúvida?';
+    case 'STUDY__FINISHED': return 'Sessão concluída';
+    case 'POST_ACTION__ASK_STUDY': return 'Quer estudar agora?';
+    default: return '';
   }
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: darkColors.surface,
-  },
-  flex: {
-    flex: 1,
-  },
+  safe: { flex: 1, backgroundColor: darkColors.surface },
+  flex: { flex: 1 },
 
   // Header
   header: {
@@ -289,16 +340,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: darkColors.border,
   },
-  headerBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
+  headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: {
     fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
@@ -317,9 +360,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: darkColors.textSecondary,
   },
-  statusDotActive: {
-    backgroundColor: '#30D158',
-  },
+  statusDotSpeaking: { backgroundColor: '#30D158' },
+  statusDotListening: { backgroundColor: '#FF3B30' },
   headerSub: {
     fontSize: 11,
     fontFamily: 'Poppins_400Regular',
@@ -327,14 +369,8 @@ const styles = StyleSheet.create({
   },
 
   // Messages
-  messages: {
-    flex: 1,
-  },
-  messagesContent: {
-    paddingTop: 16,
-    paddingBottom: 8,
-    flexGrow: 1,
-  },
+  messages: { flex: 1 },
+  messagesContent: { paddingTop: 16, paddingBottom: 8, flexGrow: 1 },
   emptyHint: {
     flex: 1,
     alignItems: 'center',
@@ -343,11 +379,7 @@ const styles = StyleSheet.create({
   },
 
   // Typing indicator
-  typingRow: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    alignItems: 'flex-start',
-  },
+  typingRow: { paddingHorizontal: 16, marginBottom: 12, alignItems: 'flex-start' },
   typingBubble: {
     backgroundColor: '#1C1C1C',
     borderRadius: 16,
@@ -355,17 +387,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  typingDots: {
-    flexDirection: 'row',
-    gap: 5,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: darkColors.textSecondary,
-  },
+  typingDots: { flexDirection: 'row', gap: 5, alignItems: 'center' },
+  dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: darkColors.textSecondary },
 
   // Footer
   footer: {
@@ -374,20 +397,11 @@ const styles = StyleSheet.create({
     borderTopColor: darkColors.border,
     backgroundColor: darkColors.surface,
   },
-  speakingRow: {
-    alignItems: 'center',
-    paddingTop: 10,
-  },
+  speakingRow: { alignItems: 'center', paddingTop: 10 },
 
   // Options
-  optionsScroll: {
-    marginTop: 10,
-  },
-  optionsContainer: {
-    paddingHorizontal: 16,
-    gap: 8,
-    flexDirection: 'row',
-  },
+  optionsScroll: { marginTop: 10 },
+  optionsContainer: { paddingHorizontal: 16, gap: 8, flexDirection: 'row' },
   optionBtn: {
     borderRadius: 20,
     borderWidth: 1,
@@ -432,9 +446,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendBtnDisabled: {
-    backgroundColor: '#2A2A2A',
-  },
+  sendBtnDisabled: { backgroundColor: '#2A2A2A' },
 
   // Mic
   micRow: {
@@ -444,14 +456,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 4,
   },
-  micSide: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keyboardBtn: {
-    padding: 8,
-  },
+  micSide: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  keyboardBtn: { padding: 8 },
 
   // State hint
   stateHint: {

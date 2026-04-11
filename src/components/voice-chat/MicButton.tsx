@@ -9,10 +9,11 @@ import {
 } from 'react-native';
 import { MicrophoneIcon, StopIcon } from 'phosphor-react-native';
 import { darkColors } from '@/theme/colors';
-import { VoiceStatus } from '@/hooks/useVoiceInput';
+// 'processing' comes from the state machine, not from VoiceStatus directly
+type MicStatus = 'idle' | 'recording' | 'processing';
 
 interface MicButtonProps {
-  status: VoiceStatus;
+  status: MicStatus;
   onPress: () => void;
   disabled?: boolean;
 }

@@ -705,7 +705,7 @@ export function useChatStateMachine(userName: string) {
     const cur = stateRef.current;
 
     addMsg('user', trimmed);
-    patch({ isProcessing: true, options: null, showTextInput: false, failedVoiceAttempts: 0 });
+    patch({ isProcessing: true, options: null, failedVoiceAttempts: 0 });
 
     try {
       switch (cur.chatState) {

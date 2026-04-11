@@ -8,10 +8,11 @@ try {
   ExpoSpeechRecognitionModule = mod.ExpoSpeechRecognitionModule;
   useSpeechRecognitionEvent = mod.useSpeechRecognitionEvent;
 } catch {
-  // Native module not available (e.g. running in Expo Go)
+  // Native module not available (e.g. Expo Go without custom build)
 }
 
-export type VoiceStatus = 'idle' | 'recording' | 'processing';
+// Only 'idle' | 'recording' — processing state is driven by useChatStateMachine
+export type VoiceStatus = 'idle' | 'recording';
 
 export function useVoiceInput(
   onResult: (text: string) => void,
@@ -29,30 +30,30 @@ export function useVoiceInput(
     setStatus(next);
   }
 
+  // When a final result arrives, reset to idle immediately then call the handler.
+  // The state machine will show its own isProcessing spinner.
   useSpeechRecognitionEvent?.('result', (event: any) => {
     if (event.isFinal) {
       const text = event.results[0]?.transcript ?? '';
+      updateStatus('idle');
       if (text.trim()) {
-        updateStatus('processing');
         onResultRef.current(text);
       } else {
-        updateStatus('idle');
         onErrorRef.current?.('Nenhuma fala detectada. Tente novamente.');
       }
     }
   });
 
+  // Always reset to idle when recognition ends — regardless of previous status.
+  // The old guard (statusRef === 'recording') was the root cause of the infinite
+  // loading: once status was 'processing', the 'end' event became a no-op.
   useSpeechRecognitionEvent?.('end', () => {
-    if (statusRef.current === 'recording') {
-      updateStatus('idle');
-    }
+    updateStatus('idle');
   });
 
   useSpeechRecognitionEvent?.('error', (event: any) => {
-    if (statusRef.current !== 'idle') {
-      updateStatus('idle');
-      onErrorRef.current?.(event.message ?? event.error ?? 'Erro de reconhecimento');
-    }
+    updateStatus('idle');
+    onErrorRef.current?.(event.message ?? event.error ?? 'Erro de reconhecimento');
   });
 
   const startRecording = useCallback(async () => {
@@ -60,6 +61,7 @@ export function useVoiceInput(
       onErrorRef.current?.('Reconhecimento de voz não disponível neste ambiente.');
       return;
     }
+    if (statusRef.current === 'recording') return; // already active
     try {
       const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!granted) {
