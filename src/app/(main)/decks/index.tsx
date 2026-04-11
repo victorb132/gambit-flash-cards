@@ -22,6 +22,7 @@ import {
   ChartBarIcon,
   GearIcon,
   ArrowsDownUpIcon,
+  MicrophoneIcon,
 } from "phosphor-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Box from '@/components/ui/Box';
@@ -231,6 +232,13 @@ export default function DecksScreen() {
             </Box>
           </Box>
           <Box flexDirection="row" alignItems="center" style={{ gap: 16 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/(main)/voice-chat")}
+              accessibilityLabel="Chat por voz"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <MicrophoneIcon size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/(main)/stats")}
               accessibilityLabel="Estatísticas"
